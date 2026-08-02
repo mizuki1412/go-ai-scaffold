@@ -2,7 +2,7 @@ package roledao
 
 import (
 	"fmt"
-	"github.com/Masterminds/squirrel"
+
 	"github.com/example/go-ai-scaffold/mod/user/dao/departmentdao"
 	"github.com/example/go-ai-scaffold/mod/user/model"
 	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
@@ -12,37 +12,69 @@ type Dao struct {
 	sqlkit.Dao[model.Role]
 }
 
-const (
-	ResultDefault byte = iota
-	ResultNone
+// CascadeOpts S10/S11: 级联策略选项，替代 byte 枚举。
+type CascadeOpts struct {
+	// Department 是否级联取 Department
+	Department bool
+}
+
+var (
+	OptsNone    = CascadeOpts{}                 // 不级联
+	OptsDefault = CascadeOpts{Department: true} // 默认级联 Department
 )
 
+// 旧 byte 常量兼容（New(byte) 内部映射到 Opts*）
+const (
+	ResultDefault byte = 0
+	ResultNone    byte = 1
+)
+
+// New 兼容旧签名：cascadeType byte 仍可用。
 func New(cascadeType byte, ds ...*sqlkit.DataSource) Dao {
-	dao := sqlkit.New[model.Role](ds...)
-	dao.Cascade = func(obj *model.Role) {
-		switch cascadeType {
-		case ResultDefault:
-			if obj.Department != nil {
-				obj.Department = departmentdao.New(departmentdao.ResultDefault, dao.DataSource()).SelectOneWithDelById(obj.Department.Id)
-			}
-		case ResultNone:
-			obj.Department = nil
-		}
+	var opts CascadeOpts
+	switch cascadeType {
+	case 0: // ResultDefault
+		opts = OptsDefault
+	default: // ResultNone
+		opts = OptsNone
 	}
+	return NewWithOpts(opts, ds...)
+}
+
+// NewWithOpts S11: 按级联选项构造 dao。
+func NewWithOpts(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
+	dao := sqlkit.New[model.Role](ds...)
+	dao = dao.WithCascadeOpts(opts, func(obj *model.Role, ctx sqlkit.CascadeCtx) {
+		o := ctx.Opts.(CascadeOpts)
+		if o.Department && obj.Department != nil {
+			obj.Department = departmentdao.NewWithOpts(departmentdao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Department.Id)
+		}
+	})
 	return Dao{dao}
 }
 
 func (dao Dao) FindByName(name string) *model.Role {
-	return dao.Select().Where(squirrel.Eq{"name": name}).Limit(1).One()
+	// S4: One() 内部已默认 LIMIT 1
+	return dao.Select().Where("name=?", name).One()
 }
+
+// ListFromRootDepart S2: 用 WithRecursiveRaw 替代 fmt.Sprintf 拼接递归 CTE。
 func (dao Dao) ListFromRootDepart(id int64) []*model.Role {
-	where := fmt.Sprintf(`id>0 and department in ( with recursive t(id) as( values(%d::bigint) union all select d.id from %s d, t where t.id=d.parent) select id from t )`, id, departmentdao.New(departmentdao.ResultDefault, dao.DataSource()).Table())
-	return dao.Select().Where(where).OrderBy("id").List()
+	deptTable := departmentdao.NewWithOpts(departmentdao.OptsNone, dao.DataSource()).Table()
+	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, id, deptTable)
+	return dao.Select().
+		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		Where("id>0 and department in (select id from t)").
+		OrderBy("id").List()
 }
 
 func (dao Dao) CountFromRootDepart(id int64) int64 {
-	where := fmt.Sprintf(`department in ( with recursive t(id) as( values(%d::bigint) union all select d.id from %s d, t where t.id=d.parent) select id from t )`, id, departmentdao.New(departmentdao.ResultDefault, dao.DataSource()).Table())
-	return dao.Select().Where(where).Count()
+	deptTable := departmentdao.NewWithOpts(departmentdao.OptsNone, dao.DataSource()).Table()
+	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, id, deptTable)
+	return dao.Select().
+		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		Where("department in (select id from t)").
+		Count()
 }
 
 type ListParam struct {
