@@ -1,9 +1,9 @@
 package user
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user/action/role"
-	"github.com/example/go-ai-scaffold/mod/user/action/smscode"
-	"github.com/example/go-ai-scaffold/mod/user/action/user"
+	"github.com/example/go-ai-scaffold/mod/user/controller/role"
+	"github.com/example/go-ai-scaffold/mod/user/controller/smscode"
+	"github.com/example/go-ai-scaffold/mod/user/controller/user"
 	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
 )
 

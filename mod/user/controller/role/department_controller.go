@@ -19,7 +19,7 @@ type departmentCreateParams struct {
 	Extend      class.MapString
 }
 
-func departmentCreate(ctx *context.Context) {
+func CreateDepartment(ctx *context.Context) {
 	params := departmentCreateParams{}
 	ctx.BindForm(&params)
 	department := &model.Department{}
@@ -57,7 +57,7 @@ type departmentUpdateParams struct {
 	Extend      class.MapString
 }
 
-func departmentUpdate(ctx *context.Context) {
+func UpdateDepartment(ctx *context.Context) {
 	params := departmentUpdateParams{}
 	ctx.BindForm(&params)
 	dao := departmentdao.New(departmentdao.OptsNone)
@@ -91,7 +91,7 @@ func departmentUpdate(ctx *context.Context) {
 	dao.UpdateObj(department)
 	ctx.JsonSuccess()
 }
-func departmentDel(ctx *context.Context) {
+func DeleteDepartment(ctx *context.Context) {
 	params := delParams{}
 	ctx.BindForm(&params)
 	dao := departmentdao.New(departmentdao.OptsNone)
@@ -122,7 +122,7 @@ func departmentDel(ctx *context.Context) {
 	ctx.JsonSuccess()
 }
 
-func listDepartment(ctx *context.Context) {
+func ListDepartments(ctx *context.Context) {
 	dao := departmentdao.New(departmentdao.OptsAll)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	ctx.JsonSuccess(dao.ListAll())

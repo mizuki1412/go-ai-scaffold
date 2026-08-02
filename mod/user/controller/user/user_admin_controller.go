@@ -2,6 +2,8 @@ package user
 
 import (
 	context2 "context"
+	"time"
+
 	"github.com/example/go-ai-scaffold/mod/user/dao/departmentdao"
 	"github.com/example/go-ai-scaffold/mod/user/dao/roledao"
 	"github.com/example/go-ai-scaffold/mod/user/dao/userdao"
@@ -12,7 +14,6 @@ import (
 	"github.com/example/go-ai-scaffold/pkg/service/rediskit"
 	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
 	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
-	"time"
 )
 
 var AdditionUserExAdminFunc func(ctx *context.Context, u *model.User)
@@ -22,7 +23,7 @@ type listUsersParams struct {
 	RoleIds       []int64
 }
 
-func listUsers(ctx *context.Context) {
+func ListUsers(ctx *context.Context) {
 	params := listUsersParams{}
 	ctx.BindForm(&params)
 	dao := userdao.New(userdao.OptsDefault)
@@ -53,11 +54,11 @@ type AddUserParams struct {
 func AddUser(ctx *context.Context) {
 	params := AddUserParams{}
 	ctx.BindForm(&params)
-	u := AddUserHandle(ctx, params, false)
+	u := AddUserHandler(ctx, params, false)
 	ctx.JsonSuccess(u)
 }
 
-func AddUserHandle(ctx *context.Context, params AddUserParams, checkSms bool) *model.User {
+func AddUserHandler(ctx *context.Context, params AddUserParams, checkSms bool) *model.User {
 	dao := userdao.New(userdao.OptsNone)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	if dao.FindByUsername(params.Username.String) != nil {
@@ -146,11 +147,11 @@ type UpdateParams struct {
 func UpdateUser(ctx *context.Context) {
 	params := UpdateParams{}
 	ctx.BindForm(&params)
-	UpdateUserHandle(ctx, params)
+	UpdateUserHandler(ctx, params)
 	ctx.JsonSuccess()
 }
 
-func UpdateUserHandle(ctx *context.Context, params UpdateParams) {
+func UpdateUserHandler(ctx *context.Context, params UpdateParams) {
 	dao := userdao.New(userdao.OptsDefault)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	u := dao.SelectOneById(params.Id)
@@ -219,7 +220,7 @@ type infoAdminParams struct {
 	Uid int64 `validate:"required"`
 }
 
-func infoAdmin(ctx *context.Context) {
+func InfoAdmin(ctx *context.Context) {
 	params := infoAdminParams{}
 	ctx.BindForm(&params)
 	dao := userdao.New(userdao.OptsDefault)
@@ -236,7 +237,7 @@ type DelParams struct {
 	Off class.Int32 `validate:"required" comment:"0-删除，1-冻结，2-解冻"`
 }
 
-func DelUser(ctx *context.Context) {
+func DeleteUser(ctx *context.Context) {
 	params := DelParams{}
 	ctx.BindForm(&params)
 	mine := ctx.GetJwt().IdInt64()

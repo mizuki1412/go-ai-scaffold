@@ -25,7 +25,7 @@ type ResLogin struct {
 	Token string      `json:"token"`
 }
 
-func loginByUsername(ctx *context.Context) {
+func LoginByUsername(ctx *context.Context) {
 	//session := ctx.RenewSession()
 	params := loginByUsernameParam{}
 	ctx.BindForm(&params)
@@ -65,7 +65,7 @@ type loginParam struct {
 }
 
 // / 通用登录
-func login(ctx *context.Context) {
+func Login(ctx *context.Context) {
 	//session := ctx.RenewSession()
 	params := loginParam{}
 	ctx.BindForm(&params)
@@ -115,7 +115,7 @@ type infoParam struct {
 	Schema class.String `comment:"用于校验当前登录的和需要的是不是一个schema"`
 }
 
-func info(ctx *context.Context) {
+func Info(ctx *context.Context) {
 	params := infoParam{}
 	ctx.BindForm(&params)
 	dao := userdao.New(userdao.OptsDefault)
@@ -157,7 +157,7 @@ func info(ctx *context.Context) {
 	}
 }
 
-func logout(ctx *context.Context) {
+func Logout(ctx *context.Context) {
 	ctx.DestroyJwt()
 	ctx.JsonSuccess()
 }
@@ -167,7 +167,7 @@ type updatePwdParam struct {
 	NewPwd string `validate:"required"`
 }
 
-func updatePwd(ctx *context.Context) {
+func UpdatePwd(ctx *context.Context) {
 	params := updatePwdParam{}
 	ctx.BindForm(&params)
 	uid := ctx.GetJwt().IdInt64()
@@ -198,7 +198,7 @@ type updateUserInfoParam struct {
 	ExtendJson class.MapString
 }
 
-func updateUserInfo(ctx *context.Context) {
+func UpdateUserInfo(ctx *context.Context) {
 	uid := ctx.GetJwt().IdInt64()
 	params := updateUserInfoParam{}
 	ctx.BindForm(&params)

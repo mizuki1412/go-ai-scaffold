@@ -16,14 +16,14 @@ import (
 func Init(router *router.Router) {
 	tag := "user:用户模块"
 	r := router.Group("/user")
-	r.Post("/getVerifyCode", get).Api(openapi.Tag(tag), openapi.Summary("短信验证码获取"), openapi.ReqParam(getParams{}))
+	r.Post("/getVerifyCode", GetVerifyCode).Api(openapi.Tag(tag), openapi.Summary("短信验证码获取"), openapi.ReqParam(getParams{}))
 }
 
 type getParams struct {
 	Phone string `comment:"手机号" validate:"required" trim:"true"`
 }
 
-func get(ctx *context.Context) {
+func GetVerifyCode(ctx *context.Context) {
 	params := getParams{}
 	ctx.BindForm(&params)
 	if !regexkit.IsPhone(params.Phone) {

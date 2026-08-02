@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func listAllPrivileges(ctx *context.Context) {
+func ListAllPrivileges(ctx *context.Context) {
 	dao := privilegedao.New()
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	ctx.JsonSuccess(dao.ListPrivileges())
@@ -25,7 +25,7 @@ type createParams struct {
 	Extend         class.MapString
 }
 
-func create(ctx *context.Context) {
+func CreateRole(ctx *context.Context) {
 	params := createParams{}
 	ctx.BindForm(&params)
 	role := &model.Role{}
@@ -56,7 +56,7 @@ type updateParams struct {
 	Extend         class.MapString
 }
 
-func update(ctx *context.Context) {
+func UpdateRole(ctx *context.Context) {
 	params := updateParams{}
 	ctx.BindForm(&params)
 	dao := roledao.New(roledao.OptsDefault)
@@ -91,7 +91,7 @@ type delParams struct {
 	Id int64 `validate:"required"`
 }
 
-func del(ctx *context.Context) {
+func DeleteRole(ctx *context.Context) {
 	params := delParams{}
 	ctx.BindForm(&params)
 	dao := roledao.New(roledao.OptsNone)
@@ -119,7 +119,7 @@ type listRolesParam struct {
 	Root class.Int64 `comment:"指定根department"`
 }
 
-func listRoles(ctx *context.Context) {
+func ListRoles(ctx *context.Context) {
 	params := listRolesParam{}
 	ctx.BindForm(&params)
 	var roles []*model.Role
@@ -143,7 +143,7 @@ type listByRoleParams struct {
 	RoleId int64 `validate:"required"`
 }
 
-func listRolesWithUser(ctx *context.Context) {
+func ListRolesWithUser(ctx *context.Context) {
 	params := listByRoleParams{}
 	ctx.BindForm(&params)
 	dao := roledao.New(roledao.OptsDefault)
