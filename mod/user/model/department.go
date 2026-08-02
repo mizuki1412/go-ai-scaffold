@@ -52,7 +52,7 @@ func (l DeptList) Find(fun func(ele *Department) bool) *Department {
 	}
 	return nil
 }
-func (l DeptList) MapReduce(fun func(ele *Department) any) []any {
+func (l DeptList) Map(fun func(ele *Department) any) []any {
 	var results []any
 	for _, e := range l {
 		results = append(results, fun(e))

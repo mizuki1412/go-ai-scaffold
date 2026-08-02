@@ -41,20 +41,21 @@ func (dao Dao) FindByName(name string) *model.Role {
 }
 
 // ListFromRootDepart S2: 用 WithRecursiveRaw 替代 fmt.Sprintf 拼接递归 CTE。
+// B22: 参数化 rootId，去掉 PG 专用的 ::bigint cast，兼容多 driver。
 func (dao Dao) ListFromRootDepart(id int64) []*model.Role {
 	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
-	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, id, deptTable)
+	cteBody := fmt.Sprintf(`select ? as id union all select d.id from %s d, t where t.id=d.parent`, deptTable)
 	return dao.Select().
-		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		WithRecursiveRaw("t", []string{"id"}, cteBody, id).
 		Where("id>0 and department in (select id from t)").
 		OrderBy("id").List()
 }
 
 func (dao Dao) CountFromRootDepart(id int64) int64 {
 	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
-	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, id, deptTable)
+	cteBody := fmt.Sprintf(`select ? as id union all select d.id from %s d, t where t.id=d.parent`, deptTable)
 	return dao.Select().
-		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		WithRecursiveRaw("t", []string{"id"}, cteBody, id).
 		Where("department in (select id from t)").
 		Count()
 }

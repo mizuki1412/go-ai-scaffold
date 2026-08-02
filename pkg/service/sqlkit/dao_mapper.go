@@ -245,20 +245,28 @@ func (dao Dao[T]) SelectOneWithDelById(id ...any) *T {
 
 // CheckSchemaExist schema是否存在
 func (dao Dao[T]) CheckSchemaExist(schema string) bool {
-	if dao.dataSource.Driver == sqlconst.Postgres {
-		// 参数化查询，避免 schema 名含特殊字符引发注入
-		p1 := rawPlaceholder(dao.dataSource.Driver, 1)
-		rows := dao.QueryRaw(
-			"SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = "+p1+")",
-			[]any{schema})
-		defer rows.Close()
-		for rows.Next() {
-			ret, err := rows.SliceScan()
-			if err != nil {
-				panic(exception.New(err.Error()))
-			}
-			return len(ret) > 0 && cast.ToBool(ret[0])
+	p1 := rawPlaceholder(dao.dataSource.Driver, 1)
+	var sql string
+	switch dao.dataSource.Driver {
+	case sqlconst.Postgres, sqlconst.Kingbase:
+		sql = "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = " + p1 + ")"
+	case sqlconst.Mysql:
+		sql = "SELECT COUNT(1)>0 FROM information_schema.schemata WHERE schema_name = " + p1
+	case sqlconst.Sqlite3:
+		// SQLite 无 schema 概念，始终返回 true
+		return true
+	default:
+		// 未实现的 driver，保守返回 true 不阻断流程
+		return true
+	}
+	rows := dao.QueryRaw(sql, []any{schema})
+	defer rows.Close()
+	for rows.Next() {
+		ret, err := rows.SliceScan()
+		if err != nil {
+			panic(exception.New(err.Error()))
 		}
+		return len(ret) > 0 && cast.ToBool(ret[0])
 	}
 	return false
 }

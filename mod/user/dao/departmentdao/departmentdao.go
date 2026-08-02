@@ -1,6 +1,8 @@
 package departmentdao
 
 import (
+	"fmt"
+
 	"github.com/example/go-ai-scaffold/mod/user/model"
 	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
 )
@@ -63,4 +65,18 @@ func (dao Dao) FindByName(name string) *model.Department {
 func (dao Dao) FindByNo(no string) *model.Department {
 	// S4: One() 内部已默认 LIMIT 1
 	return dao.Select().Where("no=?", no).One()
+}
+
+// IsDescendant B15: 检查 descendantId 是否是 ancestorId 的后代（含自身）。
+// 用于修改 parent 时防止成环：若 newParentId 是 deptId 的后代，则不能设为 parent。
+func (dao Dao) IsDescendant(ancestorId, descendantId int64) bool {
+	if ancestorId == descendantId {
+		return true
+	}
+	table := dao.Table()
+	cteBody := fmt.Sprintf(`select ? as id union all select d.id from %s d, t where t.id=d.parent`, table)
+	return dao.Select().
+		WithRecursiveRaw("t", []string{"id"}, cteBody, ancestorId).
+		Where("id=? and id in (select id from t)", descendantId).
+		Count() > 0
 }

@@ -29,6 +29,17 @@ func (th *Role) Value() (driver.Value, error) {
 	return th.Id, nil
 }
 
+// EnsurePrivileges B14: 保证 Privileges 字段为有效空数组，避免 JSON 序列化出 null。
+func (th *Role) EnsurePrivileges() {
+	if th == nil {
+		return
+	}
+	if !th.Privileges.Valid {
+		th.Privileges.Valid = true
+		th.Privileges.Array = []string{}
+	}
+}
+
 type RoleList []*Role
 
 func (l RoleList) Len() int           { return len(l) }
@@ -50,4 +61,11 @@ func (l RoleList) Find(fun func(ele *Role) bool) *Role {
 		}
 	}
 	return nil
+}
+func (l RoleList) Map(fun func(ele *Role) any) []any {
+	var results []any
+	for _, e := range l {
+		results = append(results, fun(e))
+	}
+	return results
 }

@@ -86,20 +86,21 @@ func (dao Dao) Find(param FindParam) *model.User {
 }
 
 // ListFromRootDepart S2: 用 WithRecursiveRaw 替代 fmt.Sprintf 拼接递归 CTE。
+// B22: 参数化 rootId，去掉 PG 专用的 ::bigint cast，兼容多 driver。
 func (dao Dao) ListFromRootDepart(departId int64) []*model.User {
 	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
-	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, departId, deptTable)
+	cteBody := fmt.Sprintf(`select ? as id union all select d.id from %s d, t where t.id=d.parent`, deptTable)
 	return dao.Select().
-		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		WithRecursiveRaw("t", []string{"id"}, cteBody, departId).
 		Where("department in (select id from t)").
 		OrderBy("name").OrderBy("id").List()
 }
 
 func (dao Dao) CountFromRootDepart(departId int64) int64 {
 	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
-	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, departId, deptTable)
+	cteBody := fmt.Sprintf(`select ? as id union all select d.id from %s d, t where t.id=d.parent`, deptTable)
 	return dao.Select().
-		WithRecursiveRaw("t", []string{"id"}, cteBody).
+		WithRecursiveRaw("t", []string{"id"}, cteBody, departId).
 		Where("department in (select id from t)").
 		Count()
 }
@@ -109,6 +110,8 @@ type ListParam struct {
 	Roles       []int64
 	Departments []int64
 	IdList      []int64
+	// B21: 分页参数，PageSize=0 时不分页
+	Page *sqlkit.Page
 }
 
 func (dao Dao) List(param ListParam) model.UserList {
@@ -124,6 +127,10 @@ func (dao Dao) List(param ListParam) model.UserList {
 	}
 	if len(param.Departments) > 0 {
 		builder = builder.WhereUnnestIn("department", param.Departments)
+	}
+	if param.Page != nil && param.Page.PageSize > 0 {
+		list, _ := builder.Page(*param.Page)
+		return list
 	}
 	return builder.List()
 }

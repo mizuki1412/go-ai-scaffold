@@ -2,6 +2,7 @@ package sqlkit
 
 import (
 	"reflect"
+	"regexp"
 
 	"github.com/example/go-ai-scaffold/pkg/class"
 	"github.com/example/go-ai-scaffold/pkg/class/constraints"
@@ -10,6 +11,19 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cast"
 )
+
+// schemaNamePattern 合法 schema 名：字母/下划线开头，仅含字母数字下划线。
+var schemaNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+// ValidateSchemaName 校验 schema 名格式，防止通过 schema 名注入。
+func ValidateSchemaName(schema string) {
+	if schema == "" {
+		panic(exception.New("schema不能为空"))
+	}
+	if !schemaNamePattern.MatchString(schema) {
+		panic(exception.New("schema名格式非法"))
+	}
+}
 
 func scanObjList[T any](dao SelectDao[T]) []*T {
 	rows := dao.QueryRows()

@@ -39,9 +39,9 @@ func (th *User) Value() (driver.Value, error) {
 	return th.Id, nil
 }
 
-// BelongDepartment 判断属于某个部门
+// BelongDepartment 判断用户是否属于某个部门（以 User.Department 为准）
 func (th *User) BelongDepartment(department int64) bool {
-	return th != nil && th.Role != nil && th.Role.Department != nil && th.Role.Department.Id == department
+	return th != nil && th.Department != nil && th.Department.Id == department
 }
 
 // HasPrivilege 判断是否有权限
@@ -71,7 +71,7 @@ func (l UserList) Find(fun func(ele *User) bool) *User {
 	}
 	return nil
 }
-func (l UserList) MapReduce(fun func(ele *User) any) []any {
+func (l UserList) Map(fun func(ele *User) any) []any {
 	var results []any
 	for _, e := range l {
 		results = append(results, fun(e))
