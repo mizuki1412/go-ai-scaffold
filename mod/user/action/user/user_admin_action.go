@@ -25,7 +25,7 @@ type listUsersParams struct {
 func listUsers(ctx *context.Context) {
 	params := listUsersParams{}
 	ctx.BindForm(&params)
-	dao := userdao.New(userdao.ResultDefault)
+	dao := userdao.New(userdao.OptsDefault)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	list := dao.List(userdao.ListParam{Roles: params.RoleIds, Departments: params.DepartmentIds})
 	if AdditionUserExAdminFunc != nil {
@@ -58,7 +58,7 @@ func AddUser(ctx *context.Context) {
 }
 
 func AddUserHandle(ctx *context.Context, params AddUserParams, checkSms bool) *model.User {
-	dao := userdao.New(userdao.ResultNone)
+	dao := userdao.New(userdao.OptsNone)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	if dao.FindByUsername(params.Username.String) != nil {
 		panic(exception.New("用户名已经存在"))
@@ -77,7 +77,7 @@ func AddUserHandle(ctx *context.Context, params AddUserParams, checkSms bool) *m
 		u.CreateDt.Set(time.Now())
 	}
 	if params.Role.IsValid() {
-		roleDao := roledao.New(roledao.ResultDefault)
+		roleDao := roledao.New(roledao.OptsDefault)
 		roleDao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 		r := roleDao.SelectOneById(params.Role)
 		if r == nil {
@@ -89,7 +89,7 @@ func AddUserHandle(ctx *context.Context, params AddUserParams, checkSms bool) *m
 		}
 	}
 	if params.Department.IsValid() {
-		deptDao := departmentdao.New(departmentdao.ResultNone)
+		deptDao := departmentdao.New(departmentdao.OptsNone)
 		deptDao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 		dept := deptDao.SelectOneById(params.Department.Int64)
 		if dept == nil {
@@ -151,7 +151,7 @@ func UpdateUser(ctx *context.Context) {
 }
 
 func UpdateUserHandle(ctx *context.Context, params UpdateParams) {
-	dao := userdao.New(userdao.ResultDefault)
+	dao := userdao.New(userdao.OptsDefault)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	u := dao.SelectOneById(params.Id)
 	if u == nil {
@@ -171,7 +171,7 @@ func UpdateUserHandle(ctx *context.Context, params UpdateParams) {
 		}
 	}
 	if params.Role.Int64 > 0 && (u.Role == nil || params.Role.Int64 != u.Role.Id) {
-		rdao := roledao.New(roledao.ResultDefault)
+		rdao := roledao.New(roledao.OptsDefault)
 		rdao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 		r := rdao.SelectOneById(params.Role)
 		if r == nil {
@@ -183,7 +183,7 @@ func UpdateUserHandle(ctx *context.Context, params UpdateParams) {
 		}
 	}
 	if params.Department.IsValid() && (u.Department == nil || params.Department.Int64 != u.Department.Id) {
-		deptDao := departmentdao.New(departmentdao.ResultNone)
+		deptDao := departmentdao.New(departmentdao.OptsNone)
 		deptDao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 		dept := deptDao.SelectOneById(params.Department.Int64)
 		if dept == nil {
@@ -222,7 +222,7 @@ type infoAdminParams struct {
 func infoAdmin(ctx *context.Context) {
 	params := infoAdminParams{}
 	ctx.BindForm(&params)
-	dao := userdao.New(userdao.ResultDefault)
+	dao := userdao.New(userdao.OptsDefault)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	user := dao.SelectOneById(params.Uid)
 	if user == nil {
@@ -246,7 +246,7 @@ func DelUser(ctx *context.Context) {
 	if mine == params.Id {
 		panic(exception.New("不能操作自己"))
 	}
-	dao := userdao.New(userdao.ResultDefault)
+	dao := userdao.New(userdao.OptsDefault)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	target := dao.SelectOneById(params.Id)
 	if target == nil {
@@ -259,7 +259,7 @@ func DelUser(ctx *context.Context) {
 		panic(exception.New("该用户不可删除"))
 	}
 	sqlkit.TxArea(func(targetDS *sqlkit.DataSource) {
-		dao1 := userdao.New(userdao.ResultDefault, targetDS)
+		dao1 := userdao.New(userdao.OptsDefault, targetDS)
 		if params.Off.Int32 == 0 {
 			dao1.SetNull(params.Id)
 			dao1.DeleteById(params.Id)

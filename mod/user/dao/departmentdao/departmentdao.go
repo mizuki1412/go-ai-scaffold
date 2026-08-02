@@ -24,43 +24,18 @@ var (
 	OptsAll      = CascadeOpts{Children: true, Parent: true} // 子+父
 )
 
-// 旧 byte 常量兼容（New(byte) 内部映射到 Opts*）
-const (
-	ResultDefault  byte = 0
-	ResultChildren byte = 1
-	ResultAll      byte = 2
-	ResultNone     byte = 3
-)
-
-// New 兼容旧签名：cascadeType byte 仍可用。
-// ResultDefault=0→OptsDefault, ResultChildren=1→OptsChildren, ResultAll=2→OptsAll, ResultNone=3→OptsNone
-func New(cascadeType byte, ds ...*sqlkit.DataSource) Dao {
-	var opts CascadeOpts
-	switch cascadeType {
-	case 0: // ResultDefault
-		opts = OptsDefault
-	case 1: // ResultChildren
-		opts = OptsChildren
-	case 2: // ResultAll
-		opts = OptsAll
-	default: // ResultNone
-		opts = OptsNone
-	}
-	return NewWithOpts(opts, ds...)
-}
-
-// NewWithOpts S11: 按级联选项构造 dao。
-func NewWithOpts(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
+// New 按 CascadeOpts 构造 dao。
+// 级联取子部门/父部门时，内部用 OptsNone 的 dao 避免无限递归。
+func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	d := sqlkit.New[model.Department](ds...)
 	dao := Dao{d}
 	dao.Dao = dao.WithCascadeOpts(opts, func(obj *model.Department, ctx sqlkit.CascadeCtx) {
 		o := ctx.Opts.(CascadeOpts)
-		// 级联取子部门/父部门时，用 OptsNone 的 dao 避免无限递归
 		if o.Children {
-			obj.Children = NewWithOpts(OptsNone, ctx.Ds).ListByParent(obj.Id)
+			obj.Children = New(OptsNone, ctx.Ds).ListByParent(obj.Id)
 		}
 		if o.Parent && obj.Parent != nil {
-			obj.Parent = NewWithOpts(OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Parent.Id)
+			obj.Parent = New(OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Parent.Id)
 		}
 		if !o.Children {
 			obj.Children = nil

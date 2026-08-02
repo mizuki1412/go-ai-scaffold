@@ -23,7 +23,7 @@ func departmentCreate(ctx *context.Context) {
 	params := departmentCreateParams{}
 	ctx.BindForm(&params)
 	department := &model.Department{}
-	dao := departmentdao.New(departmentdao.ResultNone)
+	dao := departmentdao.New(departmentdao.OptsNone)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	if params.ParentId.Valid {
 		parent := dao.SelectOneById(params.ParentId.Int64)
@@ -60,7 +60,7 @@ type departmentUpdateParams struct {
 func departmentUpdate(ctx *context.Context) {
 	params := departmentUpdateParams{}
 	ctx.BindForm(&params)
-	dao := departmentdao.New(departmentdao.ResultNone)
+	dao := departmentdao.New(departmentdao.OptsNone)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	department := dao.SelectOneById(params.Id)
 	if department == nil {
@@ -94,7 +94,7 @@ func departmentUpdate(ctx *context.Context) {
 func departmentDel(ctx *context.Context) {
 	params := delParams{}
 	ctx.BindForm(&params)
-	dao := departmentdao.New(departmentdao.ResultNone)
+	dao := departmentdao.New(departmentdao.OptsNone)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	department := dao.SelectOneById(params.Id)
 	if department == nil {
@@ -104,14 +104,14 @@ func departmentDel(ctx *context.Context) {
 		panic(exception.New("该部门不可删除"))
 	}
 	// 判断是否有角色
-	roleDao := roledao.New(userdao.ResultNone)
+	roleDao := roledao.New(roledao.OptsNone)
 	roleDao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	rNum := roleDao.CountFromRootDepart(department.Id)
 	if rNum > 0 {
 		panic(exception.New("部门下还有角色,不能删除"))
 	}
 	// 判断是否有用户
-	userDao := userdao.New(userdao.ResultNone)
+	userDao := userdao.New(userdao.OptsNone)
 	userDao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	uNum := userDao.CountFromRootDepart(department.Id)
 	if uNum > 0 {
@@ -123,7 +123,7 @@ func departmentDel(ctx *context.Context) {
 }
 
 func listDepartment(ctx *context.Context) {
-	dao := departmentdao.New(departmentdao.ResultAll)
+	dao := departmentdao.New(departmentdao.OptsAll)
 	dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")
 	ctx.JsonSuccess(dao.ListAll())
 }

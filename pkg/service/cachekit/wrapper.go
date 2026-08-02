@@ -32,7 +32,7 @@ func Wrapper(wp WrapParam, f func() string) any {
 		Key: "abc",
 		Ttl: 0,
 	}, func() any {
-		dao := userdao.New(userdao.ResultDefault)
+		dao := userdao.New(userdao.OptsDefault)
 		return dao.List(userdao.ListParam{})
 	}).([]*model.User)
 */

@@ -32,35 +32,16 @@ var (
 	OptsDeptOnly = CascadeOpts{Department: true}             // 仅 Department
 )
 
-// 旧 byte 常量兼容（New(byte) 内部映射到 Opts*）
-const (
-	ResultDefault byte = 0
-	ResultNone    byte = 1
-)
-
-// New S10/S11: 用 CascadeOpts 替代 byte 枚举。
-// 兼容旧签名：cascadeType byte 仍可用，ResultDefault=0→OptsDefault, ResultNone=1→OptsNone。
-func New(cascadeType byte, ds ...*sqlkit.DataSource) Dao {
-	var opts CascadeOpts
-	switch cascadeType {
-	case 0: // ResultDefault
-		opts = OptsDefault
-	default: // ResultNone 等
-		opts = OptsNone
-	}
-	return NewWithOpts(opts, ds...)
-}
-
-// NewWithOpts S11: 按级联选项构造 dao，支持按需只取 Role 或 Department。
-func NewWithOpts(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
+// New 按 CascadeOpts 构造 dao。
+func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	dao := sqlkit.New[model.User](ds...)
 	dao = dao.WithCascadeOpts(opts, func(obj *model.User, ctx sqlkit.CascadeCtx) {
 		o := ctx.Opts.(CascadeOpts)
 		if o.Role && obj.Role != nil {
-			obj.Role = roledao.NewWithOpts(roledao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Role.Id)
+			obj.Role = roledao.New(roledao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Role.Id)
 		}
 		if o.Department && obj.Department != nil {
-			obj.Department = departmentdao.NewWithOpts(departmentdao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Department.Id)
+			obj.Department = departmentdao.New(departmentdao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Department.Id)
 		}
 	})
 	return Dao{dao}
@@ -106,7 +87,7 @@ func (dao Dao) Find(param FindParam) *model.User {
 
 // ListFromRootDepart S2: 用 WithRecursiveRaw 替代 fmt.Sprintf 拼接递归 CTE。
 func (dao Dao) ListFromRootDepart(departId int64) []*model.User {
-	deptTable := departmentdao.NewWithOpts(departmentdao.OptsNone, dao.DataSource()).Table()
+	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
 	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, departId, deptTable)
 	return dao.Select().
 		WithRecursiveRaw("t", []string{"id"}, cteBody).
@@ -115,7 +96,7 @@ func (dao Dao) ListFromRootDepart(departId int64) []*model.User {
 }
 
 func (dao Dao) CountFromRootDepart(departId int64) int64 {
-	deptTable := departmentdao.NewWithOpts(departmentdao.OptsNone, dao.DataSource()).Table()
+	deptTable := departmentdao.New(departmentdao.OptsNone, dao.DataSource()).Table()
 	cteBody := fmt.Sprintf(`select %d::bigint as id union all select d.id from %s d, t where t.id=d.parent`, departId, deptTable)
 	return dao.Select().
 		WithRecursiveRaw("t", []string{"id"}, cteBody).
