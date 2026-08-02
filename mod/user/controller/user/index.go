@@ -11,10 +11,12 @@ func Init(router *router.Router) {
 	tag := "user:用户模块"
 	router.Group("/user/loginByUsername").Post("", LoginByUsername).Api(openapi.Tag(tag),
 		openapi.Summary("登录-用户名"),
-		openapi.ReqParam(loginByUsernameParam{}), openapi.Response(ResLogin{}))
+		openapi.ReqParam(loginByUsernameParam{}), openapi.Response(ResLogin{}),
+		openapi.Security(nil))
 	router.Group("/user/login").Post("", Login).Api(openapi.Tag(tag),
 		openapi.Summary("登录"),
-		openapi.ReqParam(loginParam{}), openapi.Response(ResLogin{}))
+		openapi.ReqParam(loginParam{}), openapi.Response(ResLogin{}),
+		openapi.Security(nil))
 	router.Group("/user/info").Use(middleware.AuthJWT()).Get("", Info).Api(openapi.Tag(tag), openapi.Summary("用户信息，刷新jwt"))
 	r := router.Group("/user", middleware.AuthJWT())
 	{
