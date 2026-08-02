@@ -267,3 +267,16 @@ func (ds *DataSource) Exec(sql string, args []any) sql.Result {
 		return ds.DBPool.MustExec(sql, args...)
 	}
 }
+
+// WithSchema S9: 返回一个浅拷贝的 DataSource，仅替换 Schema，共享原 DBPool/TX。
+// 用于请求级 schema 注入（如从 JWT 取 schema），避免在业务代码中
+// 反复 `dao.DataSource().Schema = ctx.GetJwt().Ext.GetString("schema")`。
+func (ds *DataSource) WithSchema(schema string) *DataSource {
+	return &DataSource{
+		Schema:  schema,
+		TX:      ds.TX,
+		DBPool:  ds.DBPool,
+		Driver:  ds.Driver,
+		txDepth: ds.txDepth,
+	}
+}

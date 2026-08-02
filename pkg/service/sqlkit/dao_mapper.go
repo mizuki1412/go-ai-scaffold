@@ -45,7 +45,7 @@ func (dao Dao[T]) InsertObj(dest *T) {
 			}
 		}
 		ss := fmt.Sprintf("insert into %s(%s) values(%s)",
-			dao.modelMeta.getTable(), strings.Join(columns, ", "), strings.Join(valPlaceholders, ", "))
+			dao.modelMeta.getTable(dao.dataSource), strings.Join(columns, ", "), strings.Join(valPlaceholders, ", "))
 		res := dao.ExecRaw(ss, vals)
 		rn, _ := res.RowsAffected()
 		logkit.Debug("sql res", "rows", rn)
@@ -56,17 +56,45 @@ func (dao Dao[T]) InsertObj(dest *T) {
 		builder = builder.Suffix("returning *")
 		builder.ReturnOne(dest)
 	} else {
-		// MySQL/SQL Server/Oracle/DM 等不支持 RETURNING *，仅执行插入；
-		// 自增主键不会回填到 dest，调用方需要另行获取（如 LastInsertId / 二次查询）。
+		// MySQL/SQL Server/Oracle/DM 等不支持 RETURNING *。
+		// S8: 通过 LastInsertId 回填自增主键到 dest，与 PG 的 RETURNING * 行为对齐。
 		builder := dao.Insert()
 		builder = builder.Columns(columns...).Values(vals...)
-		builder.Exec()
+		res := dao.ExecRaw(builder.Sql())
+		if id, err := res.LastInsertId(); err == nil && id > 0 {
+			rv := reflect.ValueOf(dest).Elem()
+			for _, pk := range dao.modelMeta.allPKs {
+				if pk.Auto {
+					setAutoPK(rv, pk.RStruct.Name, id)
+				}
+			}
+		}
+	}
+}
+
+// setAutoPK 将自增主键回填到 model 的 class.Int64 / sql.NullInt64 / 原生整数字段。
+func setAutoPK(rv reflect.Value, fieldName string, id int64) {
+	f := rv.FieldByName(fieldName)
+	if !f.IsValid() || !f.CanSet() {
+		return
+	}
+	// 优先用 Set(any)（class.Int64 等实现）
+	if setter, ok := f.Addr().Interface().(interface{ Set(any) }); ok {
+		setter.Set(id)
+		return
+	}
+	switch f.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		f.SetInt(id)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		f.SetUint(uint64(id))
 	}
 }
 
 func (dao Dao[T]) InsertBatch(dest []*T) {
+	// S15: 空切片直接返回，不再 panic（批量导入场景常见空入参）
 	if len(dest) == 0 {
-		panic(exception.New("insert batch need dest"))
+		return
 	}
 	// 先收集所有行字段的并集，保证每行 vals 与 columns 严格对齐。
 	// 否则当某行字段为 nil 被跳过、而其他行该字段有值时，列与值会错位。
@@ -121,7 +149,7 @@ func (dao Dao[T]) InsertBatch(dest []*T) {
 				}
 			}
 			if i == 0 {
-				sql += fmt.Sprintf("insert into %s(%s) values", dao.modelMeta.getTable(), strings.Join(columns, ", "))
+				sql += fmt.Sprintf("insert into %s(%s) values", dao.modelMeta.getTable(dao.dataSource), strings.Join(columns, ", "))
 			}
 			sql += fmt.Sprintf("(%s)", strings.Join(valPlaceholders, ", "))
 			if i < len(valsArr)-1 {

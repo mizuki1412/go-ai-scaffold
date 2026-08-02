@@ -27,6 +27,11 @@ func (dao DeleteDao[T]) Exec() int64 {
 	return rn
 }
 
+// ExecRows 为 Exec 的语义化别名，返回受影响行数，避免与 sql.Result 混淆。
+func (dao DeleteDao[T]) ExecRows() int64 {
+	return dao.Exec()
+}
+
 func (dao DeleteDao[T]) Sql() (string, []any) {
 	sqls, args, err := dao.ToSql()
 	if err != nil {
@@ -71,7 +76,7 @@ func (dao DeleteDao[T]) whereUnnest(arr any, key, flag string) DeleteDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(key), flag, s), v...)
+		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(dao.dataSource, key), flag, s), v...)
 	default:
 		panic(exception.New("whereUnnest not supported"))
 	}
@@ -88,7 +93,7 @@ func (dao DeleteDao[T]) WhereArrayIn(key string, arr any) DeleteDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayIn not supported"))
 	}
@@ -97,7 +102,7 @@ func (dao DeleteDao[T]) WhereArrayNotIn(key string, arr any) DeleteDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayNotIn not supported"))
 	}
@@ -109,4 +114,17 @@ func (dao DeleteDao[T]) WhereIn(key string, sub SubQueryInterface) DeleteDao[T] 
 }
 func (dao DeleteDao[T]) WhereLike(field string, val string) DeleteDao[T] {
 	return dao.Where(squirrel.Like{field: "%" + val + "%"})
+}
+
+// ============ S3: jsonb 谓词（防注入）============
+func (dao DeleteDao[T]) WhereJsonbPathText(jsonbCol, key, op string, val any) DeleteDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s->>%s %s ?", col, dao.dataSource.EscapeName(key), op), val)
+}
+func (dao DeleteDao[T]) WhereJsonbPathEq(jsonbCol, key string, val any) DeleteDao[T] {
+	return dao.WhereJsonbPathText(jsonbCol, key, "=", val)
+}
+func (dao DeleteDao[T]) WhereJsonbContains(jsonbCol string, val any) DeleteDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s @> ?", col), val)
 }

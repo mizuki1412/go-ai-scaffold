@@ -24,6 +24,11 @@ func (dao InsertDao[T]) Exec() int64 {
 	return rn
 }
 
+// ExecRows 为 Exec 的语义化别名，返回受影响行数，避免与 sql.Result 混淆。
+func (dao InsertDao[T]) ExecRows() int64 {
+	return dao.Exec()
+}
+
 func (dao InsertDao[T]) ReturnOne(dest *T) {
 	rows := dao.QueryRaw(dao.Sql())
 	defer rows.Close()
@@ -77,7 +82,7 @@ func (dao InsertDao[T]) Options(options ...string) InsertDao[T] {
 
 // Columns adds insert columns to the query.
 func (dao InsertDao[T]) Columns(columns ...string) InsertDao[T] {
-	dao.builder = dao.builder.Columns(dao.modelMeta.escapeNames(columns)...)
+	dao.builder = dao.builder.Columns(dao.modelMeta.escapeNames(dao.dataSource, columns)...)
 	return dao
 }
 

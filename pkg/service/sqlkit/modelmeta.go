@@ -11,17 +11,31 @@ import (
 )
 
 // ModelMeta 获取model中的tablename和db fields
+// S20: 移除 dateSource 字段——缓存实例不再持有数据源状态，消除多 goroutine 不同 schema
+// 覆盖 dateSource 的并发竞争。所有需要 dataSource 的方法改为接收 ds 参数。
 type ModelMeta struct {
 	tableName   string
 	keys        []ModelMetaKey
 	logicDelKey ModelMetaKey
-	dateSource  *DataSource
+	driver      string // 仅用于缓存 key 生成，不作为状态
 	// 处理后的 keys array
-	// 用于 select 的 全量columns
+	// 用于 select 的 全量columns（已 escape，按 driver 生成）
 	allSelectColumns []string
 	allInsertKeys    []ModelMetaKey
 	allUpdateKeys    []ModelMetaKey
 	allPKs           []ModelMetaKey
+	// S18: 预计算需要后处理的字段（SetDBDriver / decimal precision），避免 scan 时全字段 reflect
+	scanFields []scanFieldMeta
+}
+
+// scanFieldMeta 描述 scan 后需要后处理的字段索引与动作
+type scanFieldMeta struct {
+	fieldName   string
+	structIndex int
+	// 是否需要 SetDBDriver
+	setDriver bool
+	// decimal precision，>0 表示需要 Round
+	decimalPrecision int32
 }
 
 // ModelMetaKey 除 logicdelete 外的 keys
@@ -62,13 +76,6 @@ func (th ModelMetaKey) val(rv reflect.Value, driver string) any {
 				}
 			}
 		}
-		//method := v.MethodByName("Value")
-		//if !method.IsValid() {
-		//	panic(exception.New("must add Value function or use value receiver: " + th.RStruct.Name))
-		//}
-		//if method.Call(nil)[0].Interface() == nil {
-		//	val = nil
-		//}
 	}
 	return val
 }
@@ -77,8 +84,9 @@ func (th ModelMetaKey) val(rv reflect.Value, driver string) any {
 var modelMetaCache = class.NMapStringSync()
 
 // InitModelMeta obj should be elem
-func (th ModelMeta) init(obj any) ModelMeta {
-	if th.dateSource == nil {
+// S20: dateSource 由参数传入，不再存入 ModelMeta 字段。
+func (th ModelMeta) init(obj any, ds *DataSource) ModelMeta {
+	if ds == nil {
 		panic(exception.New("dataSource is nil"))
 	}
 	if obj == nil {
@@ -86,13 +94,9 @@ func (th ModelMeta) init(obj any) ModelMeta {
 	}
 	rt := reflect.TypeOf(obj)
 	// 包路径+类名+驱动类型
-	tk := rt.PkgPath() + "/" + rt.Name() + ":" + th.dateSource.Driver
-	if modelMetaCache.Contains(tk) {
-		// 命中缓存后必须用当前调用方的 dateSource 覆盖缓存里的实例：
-		// 缓存 key 只含 driver 不含 DataSource 实例，否则同一 driver 但不同 Schema 的两个 DataSource
-		// 会让 getTable() 用到错误的 Schema 修饰。
-		cached := modelMetaCache.Get(tk).(ModelMeta)
-		cached.dateSource = th.dateSource
+	tk := rt.PkgPath() + "/" + rt.Name() + ":" + ds.Driver
+	if cached, ok := modelMetaCache.Get(tk).(ModelMeta); ok {
+		// 命中缓存：ModelMeta 已无状态，直接返回
 		return cached
 	}
 	if rt.Kind() != reflect.Struct {
@@ -104,7 +108,7 @@ func (th ModelMeta) init(obj any) ModelMeta {
 			continue
 		}
 		oriKey := name
-		name = th.escapeName(name)
+		name = ds.EscapeName(name)
 		key := ModelMetaKey{Key: name, OriKey: oriKey, RStruct: rt.Field(i)}
 		// tableName; fetch once
 		if th.tableName == "" {
@@ -148,8 +152,36 @@ func (th ModelMeta) init(obj any) ModelMeta {
 		th.allSelectColumns = append(th.allSelectColumns, th.logicDelKey.Key)
 		th.allUpdateKeys = append(th.allUpdateKeys, th.logicDelKey)
 	}
+	th.driver = ds.Driver
+	// S18: 预计算 scan 后需后处理的字段
+	for i := 0; i < rt.NumField(); i++ {
+		f := rt.Field(i)
+		if f.Type.Kind() != reflect.Struct {
+			continue
+		}
+		sf := scanFieldMeta{fieldName: f.Name, structIndex: i}
+		if f.Type.Implements(reflect.TypeOf((*constraints.SetDBDriverInterface)(nil)).Elem()) ||
+			reflect.PointerTo(f.Type).Implements(reflect.TypeOf((*constraints.SetDBDriverInterface)(nil)).Elem()) {
+			sf.setDriver = true
+		}
+		sf.decimalPrecision = toInt32Tag(f.Tag.Get(tag.DecimalPrecision.Name))
+		if sf.setDriver || sf.decimalPrecision > 0 {
+			th.scanFields = append(th.scanFields, sf)
+		}
+	}
 	modelMetaCache.PutIfAbsent(tk, th)
 	return th
+}
+
+func toInt32Tag(s string) int32 {
+	n := 0
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return 0
+		}
+		n = n*10 + int(c-'0')
+	}
+	return int32(n)
 }
 
 func (th ModelMeta) getSelectColumns(excludes ...string) []string {
@@ -185,24 +217,26 @@ func (th ModelMeta) getSelectColumnsWithPrefix(prefix string, excludes ...string
 }
 
 // getTable alias 可以包括table别名
-func (th ModelMeta) getTable(alias ...string) string {
+// S20: 接收 ds 参数，不再依赖 ModelMeta 内部状态。
+func (th ModelMeta) getTable(ds *DataSource, alias ...string) string {
 	if len(alias) > 0 {
-		return th.dateSource.DecoTableName(th.tableName) + " AS " + alias[0]
-	} else {
-		return th.dateSource.DecoTableName(th.tableName)
+		return ds.DecoTableName(th.tableName) + " AS " + alias[0]
 	}
+	return ds.DecoTableName(th.tableName)
 }
 
-func (th ModelMeta) escapeNames(name []string) []string {
+// S20: escapeNames / escapeName 直接委托 DataSource，不再持有 dateSource。
+func (th ModelMeta) escapeNames(ds *DataSource, name []string) []string {
 	if len(name) == 0 {
 		panic(exception.New("modelmeta escapename nil"))
 	}
 	ret := make([]string, len(name))
-	for i := 0; i < len(name); i++ {
-		ret[i] = th.dateSource.EscapeName(name[i])
+	for i := range name {
+		ret[i] = ds.EscapeName(name[i])
 	}
 	return ret
 }
-func (th ModelMeta) escapeName(name string) string {
-	return th.dateSource.EscapeName(name)
+
+func (th ModelMeta) escapeName(ds *DataSource, name string) string {
+	return ds.EscapeName(name)
 }

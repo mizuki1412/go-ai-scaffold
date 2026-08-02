@@ -195,22 +195,40 @@ func rawPlaceholder(driver string, index int) string {
 }
 
 // args中部分值转换
+// S19: 增加快速路径——若 args 不含任何需转换的类型，直接返回原切片，避免高频分配。
 func argsWrap(driver string, args []any) []any {
 	// todo 其他值类型
+	sqliteOrTaos := driver == sqlconst.Sqlite3 || sqlconst.IsTaos(driver)
+	if !sqliteOrTaos {
+		// 非 sqlite/taos：仅需处理 class.Time / time.Time；先快速探测是否存在
+		need := false
+		for _, e := range args {
+			switch e.(type) {
+			case class.Time, time.Time:
+				need = true
+			}
+			if need {
+				break
+			}
+		}
+		if !need {
+			return args
+		}
+	}
 	new_args := make([]any, 0, len(args))
 	for _, e := range args {
 		n := e
 		switch e.(type) {
 		case class.Time:
 			v := e.(class.Time)
-			if driver == sqlconst.Sqlite3 || sqlconst.IsTaos(driver) {
+			if sqliteOrTaos {
 				n = v.UnixMill()
 			} else {
 				n = v.Time
 			}
 		case time.Time:
 			v := e.(time.Time)
-			if driver == sqlconst.Sqlite3 || sqlconst.IsTaos(driver) {
+			if sqliteOrTaos {
 				n = v.UnixMilli()
 			}
 		case string, class.String:

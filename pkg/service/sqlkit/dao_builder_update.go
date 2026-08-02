@@ -27,6 +27,11 @@ func (dao UpdateDao[T]) Exec() int64 {
 	return rn
 }
 
+// ExecRows 为 Exec 的语义化别名，返回受影响行数，避免与 sql.Result 混淆。
+func (dao UpdateDao[T]) ExecRows() int64 {
+	return dao.Exec()
+}
+
 func (dao UpdateDao[T]) Sql() (string, []any) {
 	sqls, args, err := dao.ToSql()
 	if err != nil {
@@ -61,7 +66,7 @@ func (dao UpdateDao[T]) SuffixExpr(expr squirrel.Sqlizer) UpdateDao[T] {
 }
 
 func (dao UpdateDao[T]) Set(column string, value interface{}) UpdateDao[T] {
-	dao.builder = dao.builder.Set(dao.modelMeta.escapeName(column), value)
+	dao.builder = dao.builder.Set(dao.modelMeta.escapeName(dao.dataSource, column), value)
 	return dao
 }
 func (dao UpdateDao[T]) Where(pred interface{}, args ...interface{}) UpdateDao[T] {
@@ -79,7 +84,7 @@ func (dao UpdateDao[T]) whereUnnest(arr any, key, flag string) UpdateDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(key), flag, s), v...)
+		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(dao.dataSource, key), flag, s), v...)
 	default:
 		panic(exception.New("whereUnnest not supported"))
 	}
@@ -96,7 +101,7 @@ func (dao UpdateDao[T]) WhereArrayIn(key string, arr any) UpdateDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayIn not supported"))
 	}
@@ -105,7 +110,7 @@ func (dao UpdateDao[T]) WhereArrayNotIn(key string, arr any) UpdateDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayNotIn not supported"))
 	}
@@ -117,4 +122,17 @@ func (dao UpdateDao[T]) WhereIn(key string, sub SubQueryInterface) UpdateDao[T] 
 }
 func (dao UpdateDao[T]) WhereLike(field string, val string) UpdateDao[T] {
 	return dao.Where(squirrel.Like{field: "%" + val + "%"})
+}
+
+// ============ S3: jsonb 谓词（防注入）============
+func (dao UpdateDao[T]) WhereJsonbPathText(jsonbCol, key, op string, val any) UpdateDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s->>%s %s ?", col, dao.dataSource.EscapeName(key), op), val)
+}
+func (dao UpdateDao[T]) WhereJsonbPathEq(jsonbCol, key string, val any) UpdateDao[T] {
+	return dao.WhereJsonbPathText(jsonbCol, key, "=", val)
+}
+func (dao UpdateDao[T]) WhereJsonbContains(jsonbCol string, val any) UpdateDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s @> ?", col), val)
 }

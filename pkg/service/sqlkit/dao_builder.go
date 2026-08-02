@@ -22,9 +22,14 @@ func (dao Dao[T]) _select(fields ...string) SelectDao[T] {
 func (dao Dao[T]) Select(fields ...string) SelectDao[T] {
 	if len(fields) == 0 {
 		return dao.SelectEx()
-	} else {
-		return dao._select(fields...)
 	}
+	// S13: 校验空串，避免生成非法 SQL
+	for _, f := range fields {
+		if f == "" {
+			panic(exception.New("select fields 不能包含空字符串"))
+		}
+	}
+	return dao._select(fields...)
 }
 
 // SelectEx 在modelmeta columns中去掉指定的字段
@@ -49,7 +54,7 @@ func (dao Dao[T]) Update() UpdateDao[T] {
 		ldv = dao.LogicDelVal
 	}
 	d := UpdateDao[T]{
-		builder: squirrel.Update(dao.modelMeta.getTable()),
+		builder: squirrel.Update(dao.modelMeta.getTable(dao.dataSource)),
 		Dao:     dao,
 	}
 	d.LogicDelVal = ldv
@@ -61,7 +66,7 @@ func (dao Dao[T]) Delete() DeleteDao[T] {
 		panic(exception.New("sqlbuilder modelmeta null"))
 	}
 	d := DeleteDao[T]{
-		builder: squirrel.Delete(dao.modelMeta.getTable()),
+		builder: squirrel.Delete(dao.modelMeta.getTable(dao.dataSource)),
 		Dao:     dao,
 	}
 	ldv := LogicDelVal
@@ -77,7 +82,7 @@ func (dao Dao[T]) Insert() InsertDao[T] {
 		panic(exception.New("sqlbuilder modelmeta null"))
 	}
 	d := InsertDao[T]{
-		builder: squirrel.Insert(dao.modelMeta.getTable()),
+		builder: squirrel.Insert(dao.modelMeta.getTable(dao.dataSource)),
 		Dao:     dao,
 	}
 	ldv := LogicDelVal
@@ -93,7 +98,7 @@ func (dao Dao[T]) Replace() InsertDao[T] {
 		panic(exception.New("sqlbuilder modelmeta null"))
 	}
 	d := InsertDao[T]{
-		builder: squirrel.Replace(dao.modelMeta.getTable()),
+		builder: squirrel.Replace(dao.modelMeta.getTable(dao.dataSource)),
 		Dao:     dao,
 	}
 	ldv := LogicDelVal

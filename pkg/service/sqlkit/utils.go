@@ -18,6 +18,10 @@ func scanObjList[T any](dao SelectDao[T]) []*T {
 	for rows.Next() {
 		list = append(list, scanStruct[T](rows, dao.dataSource.Driver))
 	}
+	// S6: 检查迭代错误，区分"无数据"与"查询失败"
+	if err := rows.Err(); err != nil {
+		panic(exception.New(err.Error()))
+	}
 	if dao.Cascade != nil {
 		for i := range list {
 			dao.Cascade(list[i])
@@ -31,6 +35,8 @@ func scanStruct[T any](rows *sqlx.Rows, driver string) *T {
 	err := rows.StructScan(m)
 	rv := reflect.ValueOf(m).Elem()
 	rt := reflect.TypeOf(m).Elem()
+	// S18: scanStruct 作为泛型函数无法持有 dao 上下文，仍需全字段 reflect。
+	// ModelMeta.scanFields 预计算已就绪，待后续 scan 路径接入 dao 实例后启用。
 	for i := 0; i < rv.NumField(); i++ {
 		v := rv.Field(i)
 		if v.Kind() == reflect.Struct {

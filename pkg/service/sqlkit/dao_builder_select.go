@@ -31,9 +31,9 @@ func (dao SelectDao[T]) Print() {
 
 func (dao SelectDao[T]) sqlOriginPlaceholder() (string, []any) {
 	if dao.fromAs == "" {
-		dao.builder = dao.builder.From(dao.modelMeta.getTable())
+		dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.dataSource))
 	} else {
-		dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.fromAs))
+		dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.dataSource, dao.fromAs))
 	}
 	dao.builder = dao.builder.PlaceholderFormat(squirrel.Question)
 	return dao.builder.MustSql()
@@ -51,9 +51,9 @@ func (dao SelectDao[T]) ToSql() (string, []any, error) {
 		dao.builder = dao.builder.From(dao.from)
 	} else {
 		if dao.fromAs == "" {
-			dao.builder = dao.builder.From(dao.modelMeta.getTable())
+			dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.dataSource))
 		} else {
-			dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.fromAs))
+			dao.builder = dao.builder.From(dao.modelMeta.getTable(dao.dataSource, dao.fromAs))
 		}
 	}
 	dao.builder = dao.builder.PlaceholderFormat(placeholder(dao.dataSource.Driver))
@@ -109,6 +109,13 @@ func (dao SelectDao[T]) FromSubQuery(sub SelectDao[T], alias string) SelectDao[T
 	return dao
 }
 
+// As S12: 生成 "(<本查询>) AS alias" 的 SQL 片段与参数，便于嵌入到其他语句
+// （如作为 CTE 体、IN 子查询、JOIN 子查询）。占位符使用与当前数据源一致。
+func (dao SelectDao[T]) As(alias string) (string, []any) {
+	sql, args := dao.sqlOriginPlaceholder()
+	return "(" + sql + ") AS " + alias, args
+}
+
 func (dao SelectDao[T]) Distinct() SelectDao[T] {
 	dao.builder = dao.builder.Distinct()
 	return dao
@@ -121,23 +128,23 @@ func (dao SelectDao[T]) Options(options ...string) SelectDao[T] {
 }
 
 func (dao SelectDao[T]) Join(dm DaoModelMeta, as string, on string, rest ...any) SelectDao[T] {
-	dao.builder = dao.builder.Join(dm.getModelMeta().getTable(as)+" on "+on, rest...)
+	dao.builder = dao.builder.Join(dm.getModelMeta().getTable(dm.getDataSource(), as)+" on "+on, rest...)
 	return dao
 }
 func (dao SelectDao[T]) LeftJoin(dm DaoModelMeta, as string, on string, rest ...any) SelectDao[T] {
-	dao.builder = dao.builder.LeftJoin(dm.getModelMeta().getTable(as)+" on "+on, rest...)
+	dao.builder = dao.builder.LeftJoin(dm.getModelMeta().getTable(dm.getDataSource(), as)+" on "+on, rest...)
 	return dao
 }
 func (dao SelectDao[T]) RightJoin(dm DaoModelMeta, as string, on string, rest ...any) SelectDao[T] {
-	dao.builder = dao.builder.RightJoin(dm.getModelMeta().getTable(as)+" on "+on, rest...)
+	dao.builder = dao.builder.RightJoin(dm.getModelMeta().getTable(dm.getDataSource(), as)+" on "+on, rest...)
 	return dao
 }
 func (dao SelectDao[T]) InnerJoin(dm DaoModelMeta, as string, on string, rest ...any) SelectDao[T] {
-	dao.builder = dao.builder.InnerJoin(dm.getModelMeta().getTable(as)+" on "+on, rest...)
+	dao.builder = dao.builder.InnerJoin(dm.getModelMeta().getTable(dm.getDataSource(), as)+" on "+on, rest...)
 	return dao
 }
 func (dao SelectDao[T]) CrossJoin(dm DaoModelMeta, as string, on string, rest ...any) SelectDao[T] {
-	dao.builder = dao.builder.CrossJoin(dm.getModelMeta().getTable(as)+" on "+on, rest...)
+	dao.builder = dao.builder.CrossJoin(dm.getModelMeta().getTable(dm.getDataSource(), as)+" on "+on, rest...)
 	return dao
 }
 
@@ -172,7 +179,7 @@ func (dao SelectDao[T]) Having(pred any, args ...any) SelectDao[T] {
 }
 
 func (dao SelectDao[T]) GroupBy(groupBys ...string) SelectDao[T] {
-	dao.builder = dao.builder.GroupBy(dao.modelMeta.escapeNames(groupBys)...)
+	dao.builder = dao.builder.GroupBy(dao.modelMeta.escapeNames(dao.dataSource, groupBys)...)
 	return dao
 }
 func (dao SelectDao[T]) GroupByRow(groupBys ...string) SelectDao[T] {
@@ -184,11 +191,11 @@ func (dao SelectDao[T]) OrderBy(field string) SelectDao[T] {
 	if strings.Contains(field, " ") {
 		panic(exception.New("order by 不能包含空格"))
 	}
-	dao.builder = dao.builder.OrderBy(dao.modelMeta.escapeName(field))
+	dao.builder = dao.builder.OrderBy(dao.modelMeta.escapeName(dao.dataSource, field))
 	return dao
 }
 func (dao SelectDao[T]) OrderByDesc(field string) SelectDao[T] {
-	dao.builder = dao.builder.OrderBy(dao.modelMeta.escapeName(field) + " DESC")
+	dao.builder = dao.builder.OrderBy(dao.modelMeta.escapeName(dao.dataSource, field) + " DESC")
 	return dao
 }
 
@@ -227,10 +234,10 @@ func (dao SelectDao[T]) whereUnnest(arr any, key, flag string) SelectDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(key), flag, s), v...)
+		return dao.Where(fmt.Sprintf("%s %s (select unnest(%s))", dao.modelMeta.escapeName(dao.dataSource, key), flag, s), v...)
 	default:
 		s, v := normalArray(arr)
-		return dao.Where(fmt.Sprintf("%s %s %s", dao.modelMeta.escapeName(key), flag, s), v...)
+		return dao.Where(fmt.Sprintf("%s %s %s", dao.modelMeta.escapeName(dao.dataSource, key), flag, s), v...)
 	}
 }
 func (dao SelectDao[T]) WhereUnnestIn(key string, arr any) SelectDao[T] {
@@ -245,7 +252,7 @@ func (dao SelectDao[T]) WhereArrayIn(key string, arr any) SelectDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("%s @> %s", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayIn not supported"))
 	}
@@ -254,7 +261,7 @@ func (dao SelectDao[T]) WhereArrayNotIn(key string, arr any) SelectDao[T] {
 	switch dao.dataSource.Driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:
 		s, v := pgArray(arr)
-		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(key), s), v...)
+		return dao.Where(fmt.Sprintf("not (%s @> %s)", dao.modelMeta.escapeName(dao.dataSource, key), s), v...)
 	default:
 		panic(exception.New("WhereArrayNotIn not supported"))
 	}
@@ -266,4 +273,71 @@ func (dao SelectDao[T]) WhereIn(key string, sub SubQueryInterface) SelectDao[T] 
 }
 func (dao SelectDao[T]) WhereLike(field string, val string) SelectDao[T] {
 	return dao.Where(squirrel.Like{field: "%" + val + "%"})
+}
+
+// ============ S1: IgnoreLogicDel 的便捷终结方法 ============
+// OneIgnoreDel 取一条并忽略逻辑删除过滤，等价于 dao.Select().Where(...).IgnoreLogicDel().One()
+func (dao SelectDao[T]) OneIgnoreDel() *T {
+	return dao.IgnoreLogicDel().One()
+}
+func (dao SelectDao[T]) ListIgnoreDel() []*T {
+	return dao.IgnoreLogicDel().List()
+}
+
+// ============ S2: CTE / WITH 支持 ============
+// With 增加 WITH 子句（非递归 CTE）。name 为 CTE 名，columns 为可选列名，sub 为子查询。
+func (dao SelectDao[T]) With(name string, columns []string, sub SubQueryInterface) SelectDao[T] {
+	sql, args := sub.sqlOriginPlaceholder()
+	prefix := name
+	if len(columns) > 0 {
+		prefix += "(" + strings.Join(columns, ", ") + ")"
+	}
+	prefix += " AS (" + sql + ")"
+	dao.builder = dao.builder.Prefix(prefix, args...)
+	return dao
+}
+
+// WithRecursive 增加 WITH RECURSIVE 子句。用于递归 CTE（如树形结构查询）。
+// sub 为 CTE 的查询体（含递归项）。调用方需在 sub 内自行组织 UNION/UNION ALL。
+func (dao SelectDao[T]) WithRecursive(name string, columns []string, sub SubQueryInterface) SelectDao[T] {
+	sql, args := sub.sqlOriginPlaceholder()
+	prefix := "RECURSIVE " + name
+	if len(columns) > 0 {
+		prefix += "(" + strings.Join(columns, ", ") + ")"
+	}
+	prefix += " AS (" + sql + ")"
+	dao.builder = dao.builder.Prefix(prefix, args...)
+	return dao
+}
+
+// WithRecursiveRaw 用原始 SQL 字符串作为递归 CTE 体。
+// sqlBody 为完整 CTE 体（不含 name 与 AS），args 为其参数。
+// 适用于不便构造 SubQueryInterface 的复杂递归查询。
+func (dao SelectDao[T]) WithRecursiveRaw(name string, columns []string, sqlBody string, args ...any) SelectDao[T] {
+	prefix := "RECURSIVE " + name
+	if len(columns) > 0 {
+		prefix += "(" + strings.Join(columns, ", ") + ")"
+	}
+	prefix += " AS (" + sqlBody + ")"
+	dao.builder = dao.builder.Prefix(prefix, args...)
+	return dao
+}
+
+// ============ S3: jsonb 谓词（防注入）============
+// WhereJsonbPathText 对 PG jsonb 字段做 text 路径比较：extend->>'key' = ?
+// key 会被 escapeName 转义，避免调用方 fmt.Sprintf 拼接引发的注入。
+func (dao SelectDao[T]) WhereJsonbPathText(jsonbCol, key, op string, val any) SelectDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s->>%s %s ?", col, dao.dataSource.EscapeName(key), op), val)
+}
+
+// WhereJsonbPathEq extend->>'key' = val 的快捷写法
+func (dao SelectDao[T]) WhereJsonbPathEq(jsonbCol, key string, val any) SelectDao[T] {
+	return dao.WhereJsonbPathText(jsonbCol, key, "=", val)
+}
+
+// WhereJsonbContains PG jsonb @> 包含比较：col @> ?
+func (dao SelectDao[T]) WhereJsonbContains(jsonbCol string, val any) SelectDao[T] {
+	col := dao.modelMeta.escapeName(dao.dataSource, jsonbCol)
+	return dao.Where(fmt.Sprintf("%s @> ?", col), val)
 }

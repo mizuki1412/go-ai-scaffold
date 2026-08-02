@@ -28,6 +28,8 @@ type Dao[T any] struct {
 
 type DaoModelMeta interface {
 	getModelMeta() ModelMeta
+	// S20: Join 等方法需要拿到目标 dao 的数据源以构造带 schema 的表名
+	getDataSource() *DataSource
 }
 
 // New 必须从初始化函数生成 dao
@@ -38,13 +40,17 @@ func New[T any](ds ...*DataSource) Dao[T] {
 	} else {
 		dao.dataSource = DefaultDataSource()
 	}
-	dao.modelMeta.dateSource = dao.dataSource
-	dao.modelMeta = dao.modelMeta.init(dao.meta)
+	dao.modelMeta = dao.modelMeta.init(dao.meta, dao.dataSource)
 	return dao
 }
 
 func (dao Dao[T]) getModelMeta() ModelMeta {
 	return dao.modelMeta
+}
+
+// S20: 暴露数据源，供 Join 等方法构造目标表名
+func (dao Dao[T]) getDataSource() *DataSource {
+	return dao.dataSource
 }
 
 func (dao Dao[T]) DataSource() *DataSource {
@@ -92,8 +98,46 @@ func (dao Dao[T]) Close() {
 /// 小功能
 
 func (dao Dao[T]) Table(alias ...string) string {
-	return dao.modelMeta.getTable(alias...)
+	return dao.modelMeta.getTable(dao.dataSource, alias...)
 }
 func (dao Dao[T]) EscapeNames(name ...string) []string {
-	return dao.modelMeta.escapeNames(name)
+	return dao.modelMeta.escapeNames(dao.dataSource, name)
+}
+
+// WithSchema S9: 返回一个使用指定 schema 的新 Dao，复用原 ModelMeta 缓存与 DBPool。
+// 用于请求级 schema 注入，替代业务层反复 `dao.DataSource().Schema = ...`。
+func (dao Dao[T]) WithSchema(schema string) Dao[T] {
+	dao.dataSource = dao.dataSource.WithSchema(schema)
+	return dao
+}
+
+// ============ S10/S11: Cascade 级联策略抽象 ============
+// CascadeCtx 提供级联执行的上下文，供 CascadeFunc 决定是否执行某级联。
+// S11: 替代单一 func(*T)，支持按需控制级联粒度。
+type CascadeCtx struct {
+	// Opts 为调用方传入的级联选项（由业务自定义）
+	Opts any
+	// Ds 为当前数据源，级联查询可用
+	Ds *DataSource
+}
+
+// CascadeFunc 是带上下文的级联函数签名。
+type CascadeFunc[T any] func(obj *T, ctx CascadeCtx)
+
+// WithCascade S10: 替换 dao 的级联函数，支持 CascadeCtx 传参。
+// 与原 Cascade 字段并存，当 WithCascade 设置后，List/One 执行级联时会优先使用它。
+func (dao Dao[T]) WithCascade(f CascadeFunc[T]) Dao[T] {
+	dao.Cascade = func(obj *T) {
+		f(obj, CascadeCtx{Ds: dao.dataSource})
+	}
+	return dao
+}
+
+// WithCascadeOpts S11: 带业务 opts 的级联设置。
+// opts 会随 CascadeCtx.Opts 传入级联函数，调用方可在 opts 中编码"只取 Role 不取 Department"等策略。
+func (dao Dao[T]) WithCascadeOpts(opts any, f CascadeFunc[T]) Dao[T] {
+	dao.Cascade = func(obj *T) {
+		f(obj, CascadeCtx{Opts: opts, Ds: dao.dataSource})
+	}
+	return dao
 }
