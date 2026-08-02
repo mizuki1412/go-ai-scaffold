@@ -27,25 +27,82 @@ var (
 )
 
 // New 按 CascadeOpts 构造 dao。
-// 级联取子部门/父部门时，内部用 OptsNone 的 dao 避免无限递归。
+// S13: Parent 用声明式 link（递归 OptsDefault）；Children 为反向查询，保留 inline。
+// B23: 内层查询 children 时用 sqlkit.New 直接查询，不经过 departmentdao.New，
+// 避免 OptsNone 的重置逻辑把 c.Parent 设 nil 导致 c.Parent.Id panic。
 func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	d := sqlkit.New[model.Department](ds...)
 	dao := Dao{d}
-	dao.Dao = dao.WithCascadeOpts(opts, func(obj *model.Department, ctx sqlkit.CascadeCtx) {
+	// Parent 用声明式 link
+	var parentLinks []sqlkit.CascadeLinker[model.Department]
+	if opts.Parent {
+		parentLinks = append(parentLinks, sqlkit.NewCascadeLink(
+			func(dept *model.Department) *model.Department { return dept.Parent },
+			func(dept *model.Department, p *model.Department) { dept.Parent = p },
+			func(p *model.Department) int64 { return p.Id },
+			func(ids []int64, ds *sqlkit.DataSource) []*model.Department {
+				// 递归加载父部门的父部门
+				return New(OptsDefault, ds).SelectByIdsIgnoreDel(ids)
+			},
+		))
+	}
+	parentBatch := sqlkit.BuildCascadeBatch(parentLinks...)
+	batchF := func(list []*model.Department, ctx sqlkit.CascadeCtx) {
 		o := ctx.Opts.(CascadeOpts)
+		// 重置未请求字段（保持旧语义）
+		for _, d := range list {
+			if d == nil {
+				continue
+			}
+			if !o.Children {
+				d.Children = nil
+			}
+			if !o.Parent {
+				d.Parent = nil
+			}
+		}
+		// Parent 批量加载（用 link，递归）
+		if o.Parent {
+			parentBatch(list, ctx)
+		}
+		// Children 反向批量加载（按 parent IN (...) 一次查询，按 parent id 分组）
 		if o.Children {
-			obj.Children = New(OptsNone, ctx.Ds).ListByParent(obj.Id)
+			var ids []int64
+			for _, d := range list {
+				if d != nil {
+					ids = append(ids, d.Id)
+				}
+			}
+			if len(ids) > 0 {
+				// B23: 用 sqlkit.New 直接查询，不经过 departmentdao.New，
+				// 避免 OptsNone 重置 c.Parent=nil 导致后续 c.Parent.Id panic。
+				// children 只需 Parent.Id 用于分组，不需完整级联。
+				allChildren := sqlkit.New[model.Department](ctx.Ds).Select().
+					WhereUnnestIn("parent", ids).OrderBy("no").OrderBy("id").List()
+				byParent := make(map[int64][]*model.Department)
+				for _, c := range allChildren {
+					if c.Parent != nil {
+						byParent[c.Parent.Id] = append(byParent[c.Parent.Id], c)
+					}
+				}
+				for _, d := range list {
+					if d == nil {
+						continue
+					}
+					d.Children = byParent[d.Id]
+					if d.Children == nil {
+						d.Children = []*model.Department{}
+					}
+				}
+			}
 		}
-		if o.Parent && obj.Parent != nil {
-			obj.Parent = New(OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Parent.Id)
-		}
-		if !o.Children {
-			obj.Children = nil
-		}
-		if !o.Parent {
-			obj.Parent = nil
-		}
-	})
+	}
+	dao.Cascade = func(obj *model.Department) {
+		batchF([]*model.Department{obj}, sqlkit.CascadeCtx{Opts: opts, Ds: dao.DataSource()})
+	}
+	dao.CascadeBatch = func(list []*model.Department) {
+		batchF(list, sqlkit.CascadeCtx{Opts: opts, Ds: dao.DataSource()})
+	}
 	return dao
 }
 

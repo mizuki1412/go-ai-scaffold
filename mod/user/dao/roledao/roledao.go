@@ -24,15 +24,21 @@ var (
 )
 
 // New 按 CascadeOpts 构造 dao。
+// S13: 用 WithCascadeBatchLinks + 声明式 link 替代手写收集/分发逻辑。
 func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	dao := sqlkit.New[model.Role](ds...)
-	dao = dao.WithCascadeOpts(opts, func(obj *model.Role, ctx sqlkit.CascadeCtx) {
-		o := ctx.Opts.(CascadeOpts)
-		if o.Department && obj.Department != nil {
-			obj.Department = departmentdao.New(departmentdao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Department.Id)
-		}
-	})
-	return Dao{dao}
+	var links []sqlkit.CascadeLinker[model.Role]
+	if opts.Department {
+		links = append(links, sqlkit.NewCascadeLink(
+			func(r *model.Role) *model.Department { return r.Department },
+			func(r *model.Role, d *model.Department) { r.Department = d },
+			func(d *model.Department) int64 { return d.Id },
+			func(ids []int64, ds *sqlkit.DataSource) []*model.Department {
+				return departmentdao.New(departmentdao.OptsDefault, ds).SelectByIdsIgnoreDel(ids)
+			},
+		))
+	}
+	return Dao{dao.WithCascadeBatchLinks(opts, links...)}
 }
 
 func (dao Dao) FindByName(name string) *model.Role {

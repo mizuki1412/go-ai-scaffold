@@ -33,18 +33,33 @@ var (
 )
 
 // New 按 CascadeOpts 构造 dao。
+// S13: 用 WithCascadeBatchLinks + 声明式 link 替代手写收集/分发逻辑。
+// 每个 link 描述一个 T→*U 级联关系，sqlkit 统一处理"收集 id → 批量 IN 查询 → 按 id 分发"。
+// Role/Department 内部用各自的 OptsDefault，会递归走批量级联（role 再批量取 department）。
 func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	dao := sqlkit.New[model.User](ds...)
-	dao = dao.WithCascadeOpts(opts, func(obj *model.User, ctx sqlkit.CascadeCtx) {
-		o := ctx.Opts.(CascadeOpts)
-		if o.Role && obj.Role != nil {
-			obj.Role = roledao.New(roledao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Role.Id)
-		}
-		if o.Department && obj.Department != nil {
-			obj.Department = departmentdao.New(departmentdao.OptsDefault, ctx.Ds).SelectOneWithDelById(obj.Department.Id)
-		}
-	})
-	return Dao{dao}
+	var links []sqlkit.CascadeLinker[model.User]
+	if opts.Role {
+		links = append(links, sqlkit.NewCascadeLink(
+			func(u *model.User) *model.Role { return u.Role },
+			func(u *model.User, r *model.Role) { u.Role = r },
+			func(r *model.Role) int64 { return r.Id },
+			func(ids []int64, ds *sqlkit.DataSource) []*model.Role {
+				return roledao.New(roledao.OptsDefault, ds).SelectByIdsIgnoreDel(ids)
+			},
+		))
+	}
+	if opts.Department {
+		links = append(links, sqlkit.NewCascadeLink(
+			func(u *model.User) *model.Department { return u.Department },
+			func(u *model.User, d *model.Department) { u.Department = d },
+			func(d *model.Department) int64 { return d.Id },
+			func(ids []int64, ds *sqlkit.DataSource) []*model.Department {
+				return departmentdao.New(departmentdao.OptsDefault, ds).SelectByIdsIgnoreDel(ids)
+			},
+		))
+	}
+	return Dao{dao.WithCascadeBatchLinks(opts, links...)}
 }
 
 func (dao Dao) Login(pwd, username, phone string) *model.User {

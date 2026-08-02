@@ -36,11 +36,8 @@ func scanObjList[T any](dao SelectDao[T]) []*T {
 	if err := rows.Err(); err != nil {
 		panic(exception.New(err.Error()))
 	}
-	if dao.Cascade != nil {
-		for i := range list {
-			dao.Cascade(list[i])
-		}
-	}
+	// S12: 优先批量级联，避免 N+1
+	cascadeList(dao.Dao, list)
 	return list
 }
 

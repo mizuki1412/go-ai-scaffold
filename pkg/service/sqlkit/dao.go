@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
+	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
 	"github.com/example/go-ai-scaffold/pkg/service/logkit"
 	"github.com/jmoiron/sqlx"
@@ -16,8 +17,10 @@ type Dao[T any] struct {
 	meta T
 	// 逻辑删除的字段，可替代全局的LogicDelVal
 	LogicDelVal []any
-	// 级联实现的函数
+	// 级联实现的函数（单条，向后兼容）
 	Cascade func(*T)
+	// 批量级联实现的函数。优先于 Cascade 使用，避免 N+1 查询
+	CascadeBatch func([]*T)
 	// 数据源
 	dataSource *DataSource
 	// 目标表结构
@@ -68,11 +71,10 @@ func (dao Dao[T]) QueryRawRows(sql string, args []any) []*T {
 	for rows.Next() {
 		list = append(list, scanStruct[T](rows, dao.dataSource.Driver))
 	}
-	if dao.Cascade != nil {
-		for i := range list {
-			dao.Cascade(list[i])
-		}
+	if err := rows.Err(); err != nil {
+		panic(exception.New(err.Error()))
 	}
+	cascadeList(dao, list)
 	return list
 }
 
@@ -138,4 +140,44 @@ func (dao Dao[T]) WithCascadeOpts(opts any, f CascadeFunc[T]) Dao[T] {
 		f(obj, CascadeCtx{Opts: opts, Ds: dao.dataSource})
 	}
 	return dao
+}
+
+// CascadeBatchFunc 批量级联函数签名。
+// 一次性接收整个 list，调用方可在回调内收集所有 id 用 WHERE IN 单次查询后按 id 分发，
+// 避免 N+1 查询。
+type CascadeBatchFunc[T any] func(list []*T, ctx CascadeCtx)
+
+// WithCascadeBatch S12: 替换 dao 的批量级联函数，优先于 WithCascade 设置的 Cascade 使用。
+// One/QueryRawRows 在 list 长度>1 时走批量路径；长度==1 时回退到单条 Cascade 避免空切片开销。
+func (dao Dao[T]) WithCascadeBatch(f CascadeBatchFunc[T]) Dao[T] {
+	dao.CascadeBatch = func(list []*T) {
+		f(list, CascadeCtx{Ds: dao.dataSource})
+	}
+	return dao
+}
+
+// WithCascadeBatchOpts S12: 带业务 opts 的批量级联设置。
+// opts 会随 CascadeCtx.Opts 传入级联函数。
+func (dao Dao[T]) WithCascadeBatchOpts(opts any, f CascadeBatchFunc[T]) Dao[T] {
+	dao.CascadeBatch = func(list []*T) {
+		f(list, CascadeCtx{Opts: opts, Ds: dao.dataSource})
+	}
+	return dao
+}
+
+// cascadeList 统一执行级联策略：list 长度>1 且设置了 CascadeBatch 时走批量；
+// 否则回退到逐条 Cascade。One 路径不应调用此函数。
+func cascadeList[T any](dao Dao[T], list []*T) {
+	if len(list) == 0 {
+		return
+	}
+	if dao.CascadeBatch != nil && len(list) > 1 {
+		dao.CascadeBatch(list)
+		return
+	}
+	if dao.Cascade != nil {
+		for i := range list {
+			dao.Cascade(list[i])
+		}
+	}
 }

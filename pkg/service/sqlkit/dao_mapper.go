@@ -243,6 +243,31 @@ func (dao Dao[T]) SelectOneWithDelById(id ...any) *T {
 	return builder.IgnoreLogicDel().One()
 }
 
+// SelectByIdsIgnoreDel S12: 根据id列表批量获取，忽略逻辑删除。
+// 仅支持单主键表。用于级联批量查询场景，避免 N+1。
+// ids 为空时返回 nil，不发 SQL。
+func (dao Dao[T]) SelectByIdsIgnoreDel(ids []int64) []*T {
+	if len(ids) == 0 {
+		return nil
+	}
+	if len(dao.modelMeta.allPKs) != 1 {
+		panic(exception.New("SelectByIdsIgnoreDel 仅支持单主键表"))
+	}
+	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].Key, ids).IgnoreLogicDel().List()
+}
+
+// SelectByIds S12: 根据id列表批量获取，计算逻辑删除。
+// 仅支持单主键表。ids 为空时返回 nil。
+func (dao Dao[T]) SelectByIds(ids []int64) []*T {
+	if len(ids) == 0 {
+		return nil
+	}
+	if len(dao.modelMeta.allPKs) != 1 {
+		panic(exception.New("SelectByIds 仅支持单主键表"))
+	}
+	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].Key, ids).List()
+}
+
 // CheckSchemaExist schema是否存在
 func (dao Dao[T]) CheckSchemaExist(schema string) bool {
 	p1 := rawPlaceholder(dao.dataSource.Driver, 1)
