@@ -9,6 +9,11 @@ import (
 )
 
 // Recover 错误处理。
+// B4: 用 Writer.Written() 判断响应是否已写入，替代 IsAborted()。
+// 原逻辑在 IsAborted() 为 true 时直接 return，会吞掉未写入响应的错误：
+//   - handler 调用 Abort() 后 panic → 响应未写 → return 后客户端拿到空响应
+//
+// 改为：只要响应未写入就补写 JsonError，已写入则跳过避免 gin 重复写告警。
 func Recover() router.Handler {
 	return func(ctx *context.Context) {
 		defer func() {
@@ -22,11 +27,9 @@ func Recover() router.Handler {
 					msg = cast.ToString(err)
 					logkit.ErrorException(exception.New(msg, 3))
 				}
-				if ctx.Proxy.IsAborted() {
-					return
+				if !ctx.Proxy.Writer.Written() {
+					ctx.JsonError(msg)
 				}
-				ctx.JsonError(msg)
-				//ctx.Proxy.Abort()
 			}
 		}()
 		ctx.Proxy.Next()

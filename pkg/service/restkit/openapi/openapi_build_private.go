@@ -188,7 +188,9 @@ func lowerFirst(s string) string {
 
 // buildFieldSchemas 统一封装对象的成员变量为 schema，并回调处理。
 // 处理 json:"-" 跳过、schema:"ignore" 跳过、validate 约束提取。
-func buildFieldSchemas(rt reflect.Type, callBack func(s *ApiDocV3Schema, field reflect.StructField)) {
+// A14: 将 fieldNameAndSkip 计算得到的 name 直接传给 callback，
+// 避免 callback 内重复调用 fieldNameAndSkip（原逻辑每个字段会被解析两次）。
+func buildFieldSchemas(rt reflect.Type, callBack func(s *ApiDocV3Schema, field reflect.StructField, name string)) {
 	for rt.Kind() == reflect.Pointer || rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array {
 		rt = rt.Elem()
 	}
@@ -226,8 +228,7 @@ func buildFieldSchemas(rt reflect.Type, callBack func(s *ApiDocV3Schema, field r
 		if tag.WriteOnly.Hit(field.Tag) {
 			schema.WriteOnly = true
 		}
-		callBack(schema, field)
-		_ = name // name 在 callback 中通过 fieldNameAndSkip 重新获取，避免闭包陷阱
+		callBack(schema, field, name)
 	}
 }
 
@@ -295,11 +296,8 @@ func applyValidateConstraints(schema *ApiDocV3Schema, validateTag string) {
 func buildObjectSchema(rt reflect.Type) *ApiDocV3Schema {
 	schema := &ApiDocV3Schema{Properties: map[string]*ApiDocV3Schema{}}
 	schema.Type = SchemaTypeObject
-	buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField) {
-		name, skip := fieldNameAndSkip(field)
-		if skip {
-			return
-		}
+	// A14: name 已由 buildFieldSchemas 计算并传入，无需再次调用 fieldNameAndSkip
+	buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField, name string) {
 		if tag.Validate.Contain(field.Tag, tag.ValidateRequired) {
 			schema.Required = append(schema.Required, name)
 		}
@@ -309,7 +307,7 @@ func buildObjectSchema(rt reflect.Type) *ApiDocV3Schema {
 }
 
 // buildComponentSchema 将对象写入 components/schemas 并返回 $ref。
-// 处理循环引用：先注册空 schema 占位，加入 todo 列表延迟构建。
+// 处理循环引用：先注册空 schema 占位，再立即构建并覆盖。
 func buildComponentSchema(rt reflect.Type) string {
 	for rt.Kind() == reflect.Pointer {
 		rt = rt.Elem()
@@ -351,24 +349,15 @@ func finalizeSchema(s *ApiDocV3Schema) {
 	}
 }
 
-var componentsTodoList []reflect.Type
-
-// handleComponentsTodo 处理延迟构建的组件。
-// 当前 buildComponentSchema 已改为立即构建，此函数保留为空操作以兼容调用方。
-func handleComponentsTodo() {
-	// no-op: 组件在 buildComponentSchema 时已立即构建
-	componentsTodoList = nil
-}
-
 // buildReqParamElement 构建单个参数元素。
-func buildReqParamElement(s *ApiDocV3Schema, field reflect.StructField) *ApiDocV3ReqParam {
+// A14: name 由调用方传入，避免每次重复解析 json tag。
+func buildReqParamElement(s *ApiDocV3Schema, field reflect.StructField, name string) *ApiDocV3ReqParam {
 	e := &ApiDocV3ReqParam{}
 	e.Schema = s
 	e.Description = field.Tag.Get(tag.Comment.Name)
 	if tag.Validate.Contain(field.Tag, tag.ValidateRequired) {
 		e.Required = true
 	}
-	name, _ := fieldNameAndSkip(field)
 	e.Name = name
 	in := field.Tag.Get(tag.ParamIn.Name)
 	if !arraykit.StringContains([]string{ParamInQuery, ParamInPath, ParamInHeader, ParamInCookie}, in) {

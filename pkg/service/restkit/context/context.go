@@ -1,6 +1,10 @@
 package context
 
 import (
+	"net/http"
+	"reflect"
+	"strings"
+
 	"github.com/example/go-ai-scaffold/pkg/class"
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/cli/tag"
@@ -11,9 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/cast"
-	"net/http"
-	"reflect"
-	"strings"
 )
 
 type Context struct {
@@ -54,6 +55,163 @@ func (ctx *Context) BindForm(bean any) {
 	logkit.Info("request-body", "jwt", ctx.Get("jwt-token"), "body", body)
 }
 
+// fieldKey 从 struct field 提取请求参数 key。
+// B6: 优先使用 json tag（json:"-" 跳过；json:"name,omitempty" 取 name），
+// 无 json tag 时回退到 LowerFirst(field.Name)。
+func fieldKey(field reflect.StructField) (string, bool) {
+	if jsonTag := field.Tag.Get("json"); jsonTag != "" {
+		if jsonTag == "-" {
+			return "", true
+		}
+		name := jsonTag
+		if before, _, ok := strings.Cut(jsonTag, ","); ok {
+			name = before
+		}
+		if name == "" {
+			return stringkit.LowerFirst(field.Name), false
+		}
+		return name, false
+	}
+	return stringkit.LowerFirst(field.Name), false
+}
+
+// bindValue 从 PostForm/Query/Param 三处合并获取值。
+// B5: keyExist 跟踪所有来源是否存在 key（任一来源命中即为 true），
+// 不再仅依赖 GetPostForm，避免 Query/Param 覆盖时 class.String 无法绑定。
+func (ctx *Context) bindValue(key string) (val string, keyExist bool) {
+	if v, ok := ctx.Proxy.GetPostForm(key); ok {
+		return v, true
+	}
+	if v, ok := ctx.Proxy.GetQuery(key); ok {
+		return v, true
+	}
+	// Param：gin.Context.Params 暴露为切片，遍历判断存在性
+	for _, p := range ctx.Proxy.Params {
+		if p.Key == key {
+			return p.Value, true
+		}
+	}
+	return "", false
+}
+
+// binderFunc 将字符串值绑定到 reflect.Value。
+// 参数：
+//   - fieldV: 目标字段值
+//   - val: 已合并并 trim 后的字符串
+//   - keyExist: 请求中是否提供该 key（用于区分"未传"与"传了空值"，class.String 依赖此标志）
+//   - field: 字段元信息（用于读取 tag.DecimalPrecision 等约束）
+type binderFunc func(fieldV reflect.Value, val string, keyExist bool, field reflect.StructField)
+
+// binders A5: 用类型名 → binder 函数的 map 替代冗长的 type switch，
+// 新增类型只需追加一行注册，bindStruct 主体保持简洁。
+var binders = map[string]binderFunc{
+	"string": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		fieldV.SetString(val)
+	},
+	"int32": setIntKind,
+	"int":   setIntKind,
+	"int64": setIntKind,
+	"int8":  setIntKind,
+	"int16": setIntKind,
+	"byte":  setIntKind,
+	"float64": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.SetFloat(cast.ToFloat64(val))
+		}
+	},
+	"bool": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.SetBool(cast.ToBool(val))
+		}
+	},
+	"class.Int32": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.Set(reflect.ValueOf(class.NewInt32(val)))
+		}
+	},
+	"class.Int64": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.Set(reflect.ValueOf(class.NewInt64(val)))
+		}
+	},
+	"class.Float64": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.Set(reflect.ValueOf(class.NewFloat64(val)))
+		}
+	},
+	"class.Bool": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if !stringkit.IsNull(val) {
+			fieldV.Set(reflect.ValueOf(class.NewBool(val)))
+		}
+	},
+	"class.String": func(fieldV reflect.Value, val string, keyExist bool, _ reflect.StructField) {
+		// 仅当请求中存在该 key 时才赋值，区分"未传"与"传空串"
+		if keyExist {
+			fieldV.Set(reflect.ValueOf(class.NewString(val)))
+		}
+	},
+	"class.ArrInt": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		var p []int64
+		_ = jsonkit.ParseObj(val, &p)
+		fieldV.Set(reflect.ValueOf(class.NewArrInt(p)))
+	},
+	"class.ArrString": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		var p []string
+		_ = jsonkit.ParseObj(val, &p)
+		fieldV.Set(reflect.ValueOf(class.NewArrString(p)))
+	},
+	"class.MapString": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		var p map[string]any
+		_ = jsonkit.ParseObj(val, &p)
+		fieldV.Set(reflect.ValueOf(class.NewMapString(p)))
+	},
+	"class.MapStringArr": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		var p []map[string]any
+		_ = jsonkit.ParseObj(val, &p)
+		fieldV.Set(reflect.ValueOf(class.NewMapStringArr(p)))
+	},
+	"class.Time": func(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		temp := class.Time{}
+		if s, err := timekit.Parse(val); err == nil {
+			temp.Set(s)
+		}
+		fieldV.Set(reflect.ValueOf(temp))
+	},
+	"class.Decimal": func(fieldV reflect.Value, val string, _ bool, field reflect.StructField) {
+		if stringkit.IsNull(val) {
+			return
+		}
+		tmp := class.Decimal{}
+		tmp.Set(val)
+		if precision := cast.ToInt32(field.Tag.Get(tag.DecimalPrecision.Name)); precision > 0 {
+			tmp.Set(tmp.Round(precision))
+		}
+		fieldV.Set(reflect.ValueOf(tmp))
+	},
+}
+
+// setIntKind 共用整数类型绑定，避免 map 中重复定义。
+func setIntKind(fieldV reflect.Value, val string, _ bool, _ reflect.StructField) {
+	if !stringkit.IsNull(val) {
+		fieldV.SetInt(cast.ToInt64(val))
+	}
+}
+
 // 实现form/query/json中的数据合并获取。
 // comment:"xxx" default:"" trim:"true"
 func (ctx *Context) bindStruct(bean any) {
@@ -74,7 +232,11 @@ func (ctx *Context) bindStruct(bean any) {
 		field := rt.Field(i)
 		fieldV := rv.Field(i)
 		typeString := field.Type.String()
-		key := stringkit.LowerFirst(field.Name)
+		// B6: json tag 决定参数 key（json:"-" 表示跳过该字段不绑定）
+		key, skip := fieldKey(field)
+		if skip {
+			continue
+		}
 		// multipart file
 		if typeString == "class.File" {
 			file, err := ctx.Proxy.FormFile(key)
@@ -95,118 +257,21 @@ func (ctx *Context) bindStruct(bean any) {
 			}
 			continue
 		}
-		// bind struct key
-		var val string
-		var keyExist bool
-		// 判断是否存在key，用于空字符串和无的区分
-		val, keyExist = ctx.Proxy.GetPostForm(key)
-		if val == "" {
-			val = ctx.Proxy.Query(key)
-		}
-		if val == "" {
-			// todo
-			val = ctx.Proxy.Param(key)
-		}
+		// B5: 跨 PostForm/Query/Param 统一判断 key 是否存在
+		val, keyExist := ctx.bindValue(key)
 		// 判断trim
 		if tag.Trim.Hit(field.Tag) {
 			val = strings.TrimSpace(val)
 		}
 		if val == "" {
 			if tag.Default.Exist(field.Tag) {
-				// default
 				val = field.Tag.Get(tag.Default.Name)
 				keyExist = true
 			}
 		}
-		switch typeString {
-		case "string":
-			fieldV.SetString(val)
-		case "int32", "int", "int64", "int8", "int16", "byte":
-			if !stringkit.IsNull(val) {
-				fieldV.SetInt(cast.ToInt64(val))
-			}
-		case "float64":
-			if !stringkit.IsNull(val) {
-				fieldV.SetFloat(cast.ToFloat64(val))
-			}
-		case "bool":
-			if !stringkit.IsNull(val) {
-				fieldV.SetBool(cast.ToBool(val))
-			}
-		case "class.Int32":
-			if !stringkit.IsNull(val) {
-				tmp := class.NewInt32(val)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.Int64":
-			if !stringkit.IsNull(val) {
-				tmp := class.NewInt64(val)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.Float64":
-			if !stringkit.IsNull(val) {
-				tmp := class.NewFloat64(val)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.Bool":
-			if !stringkit.IsNull(val) {
-				tmp := class.NewBool(val)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.String":
-			if keyExist {
-				tmp := class.NewString(val)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.ArrInt":
-			if !stringkit.IsNull(val) {
-				var p []int64
-				_ = jsonkit.ParseObj(val, &p)
-				tmp := class.NewArrInt(p)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.ArrString":
-			if !stringkit.IsNull(val) {
-				var p []string
-				_ = jsonkit.ParseObj(val, &p)
-				tmp := class.NewArrString(p)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.MapString":
-			if !stringkit.IsNull(val) {
-				var p map[string]any
-				_ = jsonkit.ParseObj(val, &p)
-				tmp := class.NewMapString(p)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.MapStringArr":
-			if !stringkit.IsNull(val) {
-				var p []map[string]any
-				_ = jsonkit.ParseObj(val, &p)
-				tmp := class.NewMapStringArr(p)
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
-		case "class.Time":
-			if !stringkit.IsNull(val) {
-				temp := class.Time{}
-				s, err := timekit.Parse(val)
-				if err == nil {
-					//panic(exception.New("time cast error"))
-					temp.Set(s)
-				}
-				fieldV.Set(reflect.ValueOf(temp))
-			}
-		case "class.Decimal":
-			if !stringkit.IsNull(val) {
-				tmp := class.Decimal{}
-				tmp.Set(val)
-				precision := cast.ToInt32(field.Tag.Get(tag.DecimalPrecision.Name))
-				if precision > 0 {
-					tmp.Set(tmp.Round(precision))
-				}
-				fieldV.Set(reflect.ValueOf(tmp))
-			}
+		// A5: 查表绑定，未注册类型保持零值
+		if binder, ok := binders[typeString]; ok {
+			binder(fieldV, val, keyExist, field)
 		}
-
 	}
 }

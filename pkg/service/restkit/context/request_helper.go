@@ -1,6 +1,7 @@
 package context
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/example/go-ai-scaffold/pkg/library/c"
@@ -12,6 +13,16 @@ var CookieTokenKey = "token"
 
 // BearerPrefix Swagger UI / OpenAPI http/bearer scheme 发送 "Bearer <token>"。
 const BearerPrefix = "Bearer "
+
+// JwtCookie 配置项。可在应用启动时通过 configkit 覆盖，或直接赋值。
+// - Domain: cookie 作用域名。为空时用请求 Host 的域名。
+// - Secure: 是否仅 HTTPS 传输。生产环境应为 true。
+// - SameSite: SameSite 策略。跨域场景需 Lax/None（None 时 Secure 必须 true）。
+var (
+	JwtCookieDomain   = ""
+	JwtCookieSecure   = false
+	JwtCookieSameSite = http.SameSiteLaxMode
+)
 
 func (ctx *Context) ReadToken() {
 	token := ctx.Request.Header.Get(HeaderTokenKey)

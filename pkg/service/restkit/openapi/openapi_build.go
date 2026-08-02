@@ -51,6 +51,12 @@ type Builder struct {
 type BuildOpt func(*Builder)
 
 // GenOperationId path转首字母大写后拼接，同时把其中的路径参数标识出来。
+// A13: 统一路径参数格式为 OpenAPI 规范的 {name}：
+//   - gin 单段参数 `:id` → `{id}`
+//   - gin catch-all `*action` → `{action}`（OpenAPI 不区分单段/多段，统一为 {name}）
+//   - 已是 `{name}` 形式的保持不变
+//
+// 修复前 `*action` 在 path 中原样保留，生成不合规的 OpenAPI path。
 func GenOperationId(path, method string) (string, string) {
 	res := strings.ToLower(method)
 	arr := strings.Split(path, "/")
@@ -58,11 +64,12 @@ func GenOperationId(path, method string) (string, string) {
 		if e == "" {
 			continue
 		}
-		// gin 路径参数 :id → {id}
-		if e[0] == ':' {
+		// gin 路径参数 :id → {id}；catch-all *action → {action}
+		if len(e) >= 1 && (e[0] == ':' || e[0] == '*') {
 			path = strings.ReplaceAll(path, e, "{"+e[1:]+"}")
 		}
-		if e[0] == ':' || e[0] == '{' || e[0] == '*' {
+		// 跳过路径参数段（已转为 {name} 或原本就是 {name}），不参与 operationId 拼接
+		if len(e) >= 1 && (e[0] == ':' || e[0] == '*' || e[0] == '{') {
 			continue
 		}
 		res += stringkit.UpperFirst(e)
@@ -218,13 +225,12 @@ func ExternalDocs(description, url string) BuildOpt {
 func ReqParam(param any) BuildOpt {
 	return func(b *Builder) {
 		rt := reflect.TypeOf(param)
-		buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField) {
+		buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField, name string) {
 			if s.Format == SchemaFormatBinary {
 				panic(exception.New("file请使用reqBody"))
 			}
-			b.Path.Parameters = append(b.Path.Parameters, buildReqParamElement(s, field))
+			b.Path.Parameters = append(b.Path.Parameters, buildReqParamElement(s, field, name))
 		})
-		handleComponentsTodo()
 	}
 }
 
@@ -237,18 +243,15 @@ func ReqBody(param any) BuildOpt {
 		rt := reflect.TypeOf(param)
 		schema := &ApiDocV3Schema{Properties: map[string]*ApiDocV3Schema{}}
 		schema.Type = SchemaTypeObject
-		buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField) {
+		// A14: name 由 buildFieldSchemas 传入，避免回调中重复解析
+		buildFieldSchemas(rt, func(s *ApiDocV3Schema, field reflect.StructField, name string) {
 			// file 类型触发 multipart
 			if s.Format == SchemaFormatBinary {
 				keyList[0] = httpconst.MimeMultipartPOSTForm
 			}
 			// 存在 in tag 的字段加入 parameters
 			if tag.ParamIn.Exist(field.Tag) {
-				b.Path.Parameters = append(b.Path.Parameters, buildReqParamElement(s, field))
-				return
-			}
-			name, skip := fieldNameAndSkip(field)
-			if skip {
+				b.Path.Parameters = append(b.Path.Parameters, buildReqParamElement(s, field, name))
 				return
 			}
 			if tag.Validate.Contain(field.Tag, tag.ValidateRequired) {
@@ -257,7 +260,6 @@ func ReqBody(param any) BuildOpt {
 			schema.Properties[name] = s
 		})
 		b.Path.RequestBody.Content[keyList[0]] = &ApiDocV3SchemaWrapper{Schema: schema}
-		handleComponentsTodo()
 	}
 }
 
@@ -286,7 +288,6 @@ func Response(bean any) BuildOpt {
 			},
 		}
 		b.Path.Responses = responses
-		handleComponentsTodo()
 	}
 }
 
