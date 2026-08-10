@@ -36,3 +36,4 @@ logs/
 opencode.json
 .env
 .env.local
+.opencode/skills/overwrite-pkg
