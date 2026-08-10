@@ -18,9 +18,12 @@ import (
 
 var once sync.Once
 var fileLogger *slog.Logger
+var consoleEnabled bool
 
 func Init() {
 	once.Do(func() {
+		consoleEnabled = configkit.GetBool(configkey.LogConsole, true)
+
 		var level slog.Level
 		switch configkit.GetString(configkey.LogLevel) {
 		case "debug":
@@ -41,7 +44,11 @@ func Init() {
 			},
 			Level: level,
 		}
-		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, option)))
+		if consoleEnabled {
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, option)))
+		} else {
+			slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, option)))
+		}
 		if configkit.Exist(configkey.LogPath) {
 			switch configkit.GetString(configkey.LogType) {
 			case "json":
@@ -79,6 +86,12 @@ func Debug(msg string, args ...any) {
 }
 func Info(msg string, args ...any) {
 	slog.Info(msg, args...)
+	if fileLogger != nil {
+		fileLogger.Info(msg, args...)
+	}
+}
+
+func InfoFile(msg string, args ...any) {
 	if fileLogger != nil {
 		fileLogger.Info(msg, args...)
 	}

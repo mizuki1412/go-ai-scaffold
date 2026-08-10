@@ -253,7 +253,7 @@ func (dao Dao[T]) SelectByIdsIgnoreDel(ids []int64) []*T {
 	if len(dao.modelMeta.allPKs) != 1 {
 		panic(exception.New("SelectByIdsIgnoreDel 仅支持单主键表"))
 	}
-	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].Key, ids).IgnoreLogicDel().List()
+	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].OriKey, ids).IgnoreLogicDel().List()
 }
 
 // SelectByIds S12: 根据id列表批量获取，计算逻辑删除。
@@ -265,7 +265,7 @@ func (dao Dao[T]) SelectByIds(ids []int64) []*T {
 	if len(dao.modelMeta.allPKs) != 1 {
 		panic(exception.New("SelectByIds 仅支持单主键表"))
 	}
-	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].Key, ids).List()
+	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].OriKey, ids).List()
 }
 
 // CheckSchemaExist schema是否存在
