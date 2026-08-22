@@ -8,6 +8,7 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -29,6 +30,22 @@ func defaultEngine() {
 	}
 	router = &router2.Router{
 		Proxy: gin.New(),
+	}
+	// P2：默认不信任任何代理头（gin 缺省信任全部，X-Forwarded-For 可被伪造）；
+	// 反向代理部署需取真实客户端 IP 时配置 rest.trustedProxies（CIDR 逗号分隔）。
+	if proxies := configkit.GetString(configkey.RestTrustedProxies, ""); proxies != "" {
+		list := make([]string, 0, 4)
+		for _, p := range strings.Split(proxies, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				list = append(list, p)
+			}
+		}
+		if err := router.Proxy.SetTrustedProxies(list); err != nil {
+			logkit.Error("SetTrustedProxies 配置无效，回退为不信任任何代理", "err", err.Error())
+			_ = router.Proxy.SetTrustedProxies(nil)
+		}
+	} else {
+		_ = router.Proxy.SetTrustedProxies(nil)
 	}
 	// add base path
 	base := configkit.GetString(configkey.RestServerBase)

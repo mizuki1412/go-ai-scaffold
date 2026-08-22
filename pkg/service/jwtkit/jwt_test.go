@@ -36,3 +36,15 @@ func TestTokenRoundtrip(t *testing.T) {
 		t.Error("解析出的 claims 应在有效期内")
 	}
 }
+
+// TestNewScope token 域标记随签发/解析往返；不传 scope 时为空（兼容存量 token）。
+func TestNewScope(t *testing.T) {
+	configkit.Set(configkey.JwtSecretKey, "test-secret")
+	configkit.Set(configkey.JwtExpire, 1)
+	if got := Parse(New(7, "admin").Token()).Scope; got != "admin" {
+		t.Errorf("scope = %q, want admin", got)
+	}
+	if got := Parse(New(8).Token()).Scope; got != "" {
+		t.Errorf("scope = %q, want 空", got)
+	}
+}

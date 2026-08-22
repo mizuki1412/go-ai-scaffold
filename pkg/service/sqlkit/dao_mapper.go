@@ -72,6 +72,41 @@ func (dao Dao[T]) InsertObj(dest *T) {
 	}
 }
 
+// InsertObjIgnoreConflict 插入并在唯一键冲突时静默跳过（P2：check-then-insert
+// 竞态的兜底）。PG/Kingbase/SQLite 用 ON CONFLICT DO NOTHING；MySQL 系用
+// INSERT IGNORE；其余驱动退化为普通插入。返回受影响行数（0=冲突跳过）。
+// 调用方须保证表上存在对应唯一索引，否则冲突不生效。
+func (dao Dao[T]) InsertObjIgnoreConflict(dest *T) int64 {
+	var columns []string
+	var vals []any
+	rv := reflect.ValueOf(dest).Elem()
+	for _, e := range dao.modelMeta.allInsertKeys {
+		var val = e.val(rv, dao.dataSource.Driver)
+		if val == nil {
+			continue
+		}
+		columns = append(columns, e.OriKey)
+		vals = append(vals, val)
+	}
+	if len(columns) == 0 {
+		panic(exception.New("no fields", 2))
+	}
+	builder := dao.Insert().Columns(columns...).Values(vals...)
+	switch {
+	case sqlconst.IsPostgresType(dao.dataSource.Driver) || dao.dataSource.Driver == sqlconst.Sqlite3:
+		builder = builder.Suffix("on conflict do nothing")
+		return builder.Exec()
+	case dao.dataSource.Driver == sqlconst.Mysql:
+		res := dao.ExecRaw("insert ignore into "+dao.modelMeta.getTable(dao.dataSource)+
+			"("+strings.Join(columns, ", ")+") values("+
+			strings.TrimSuffix(strings.Repeat("?, ", len(vals)), ", ")+")", vals)
+		rn, _ := res.RowsAffected()
+		return rn
+	default:
+		return builder.Exec()
+	}
+}
+
 // setAutoPK 将自增主键回填到 model 的 class.Int64 / sql.NullInt64 / 原生整数字段。
 func setAutoPK(rv reflect.Value, fieldName string, id int64) {
 	f := rv.FieldByName(fieldName)

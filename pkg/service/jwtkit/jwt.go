@@ -13,13 +13,15 @@ import (
 type Claims struct {
 	Id    any             `json:"id"`
 	Ext   class.MapString `json:"ext"`
+	Scope string          `json:"scope,omitempty"`
 	Valid bool            `json:"valid"`
 	jwt.RegisteredClaims
 }
 
-// New id: string or int
-func New(id any) Claims {
-	return Claims{
+// New id: string or int。可选 scope 标记 token 所属域（如 "app"/"admin"），
+// 供 middleware.AuthJWTScope 在同一 secretKey 下隔离 app 端与管理端 token。
+func New(id any, scope ...string) Claims {
+	c := Claims{
 		Id:    id,
 		Valid: true,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -28,6 +30,10 @@ func New(id any) Claims {
 			NotBefore: jwt.NewNumericDate(time.Now()),                                                                       // 生效时间
 		},
 	}
+	if len(scope) > 0 {
+		c.Scope = scope[0]
+	}
+	return c
 }
 
 // IdleTtl 返回会话空闲窗口时长（jwt.idle 小时）。

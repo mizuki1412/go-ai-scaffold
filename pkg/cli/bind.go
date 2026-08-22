@@ -61,6 +61,7 @@ func bindDefaultFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(configkey.RestServerBase, "", "rest base url")
 	cmd.PersistentFlags().String(configkey.RestServerPort, "10000", "")
 	cmd.PersistentFlags().String(configkey.RestRequestBodySize, "", "限制request最大，单位MB")
+	cmd.PersistentFlags().String(configkey.RestTrustedProxies, "", "受信代理CIDR列表，逗号分隔；空则不信任任何代理头")
 	cmd.PersistentFlags().Bool(configkey.RestPPROF, false, "开启pprof, /debug/pprof")
 
 	cmd.PersistentFlags().Int(configkey.RestReadTimeout, 60, "读完整请求(含body)超时/秒，0不限制")

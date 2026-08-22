@@ -24,3 +24,7 @@ const RestWriteTimeout = "rest.writeTimeout"
 
 // RestIdleTimeout keep-alive 空闲连接回收时长，单位秒；0 表示不限制
 const RestIdleTimeout = "rest.idleTimeout"
+
+// RestTrustedProxies 受信代理 CIDR 列表，逗号分隔；空则不信任任何代理头。
+// 仅在反向代理后部署且需要取真实客户端 IP 时配置（如 "10.0.0.0/8"）
+const RestTrustedProxies = "rest.trustedProxies"

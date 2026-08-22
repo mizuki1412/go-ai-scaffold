@@ -89,6 +89,7 @@ router.Group("/user/login").Post("", Login).Api(
 - Guard with `middleware.AuthJWT()`; open endpoints get `openapi.Security(nil)`.
 - All auth endpoints check JWT (stores uid only); logout via `ctx.DestroyJwt()`.
 - Session model (sliding): a server-side whitelist key `token:<raw-token>` gates every authenticated request. `jwt.idle` (default 1h) is the idle window — `AuthJWT` renews it via `cachekit.Renew` on each authenticated request; `jwt.expire` (default 168h) is the absolute cap baked into the JWT exp. Set `jwt.idle<=0` to disable sliding (TTL = expire, legacy behavior).
+- Token domain isolation: guard admin-domain routes with `middleware.AuthJWTScope("admin")` and issue those tokens via `jwtkit.New(uid, "admin")` — app and admin tokens share one secret/whitelist, so `Claims.Scope` is what keeps them from crossing over.
 
 ### Response format
 ```json

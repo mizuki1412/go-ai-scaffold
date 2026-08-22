@@ -2,6 +2,7 @@ package sqlkit
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -199,6 +200,21 @@ func (dao SelectDao[T]) OrderByDesc(field string) SelectDao[T] {
 	return dao
 }
 
+// orderByExprPattern 排序表达式的合法字符白名单：字母/数字/下划线/点/逗号/
+// 空格/圆括号/连字符。引号、分号等注入载体一律拒绝。
+var orderByExprPattern = regexp.MustCompile(`^[A-Za-z0-9_.,()\s-]+$`)
+
+// OrderByExpr 按原始排序表达式排序，如 "(price - member_price) desc, id desc"。
+// 表达式经字符白名单校验后原样拼入 ORDER BY（不经 escapeName 包裹），
+// 因此可携带函数（random()）与多列多方向；禁止传入用户可控输入。
+func (dao SelectDao[T]) OrderByExpr(expr string) SelectDao[T] {
+	if !orderByExprPattern.MatchString(expr) {
+		panic(exception.New("order by 表达式含非法字符"))
+	}
+	dao.builder = dao.builder.OrderBy(expr)
+	return dao
+}
+
 func (dao SelectDao[T]) Limit(limit uint64) SelectDao[T] {
 	dao.builder = dao.builder.Limit(limit)
 	return dao
@@ -301,7 +317,7 @@ func (dao SelectDao[T]) With(name string, columns []string, sub SubQueryInterfac
 // sub 为 CTE 的查询体（含递归项）。调用方需在 sub 内自行组织 UNION/UNION ALL。
 func (dao SelectDao[T]) WithRecursive(name string, columns []string, sub SubQueryInterface) SelectDao[T] {
 	sql, args := sub.sqlOriginPlaceholder()
-	prefix := "RECURSIVE " + name
+	prefix := "WITH RECURSIVE " + name
 	if len(columns) > 0 {
 		prefix += "(" + strings.Join(columns, ", ") + ")"
 	}
@@ -314,7 +330,7 @@ func (dao SelectDao[T]) WithRecursive(name string, columns []string, sub SubQuer
 // sqlBody 为完整 CTE 体（不含 name 与 AS），args 为其参数。
 // 适用于不便构造 SubQueryInterface 的复杂递归查询。
 func (dao SelectDao[T]) WithRecursiveRaw(name string, columns []string, sqlBody string, args ...any) SelectDao[T] {
-	prefix := "RECURSIVE " + name
+	prefix := "WITH RECURSIVE " + name
 	if len(columns) > 0 {
 		prefix += "(" + strings.Join(columns, ", ") + ")"
 	}
