@@ -71,16 +71,18 @@ func Set(key string, value string, ps ...*Param) {
 	}
 }
 
+// Get 读取缓存。
+// P0 修复：配置了 redis 且未忽略时以 redis 为准（多实例部署下，登录态等共享数据
+// 必须由 redis 判定存在性——本地副本既看不到其他实例的写入，也看不到删除/登出）；
+// 未配置 redis 或 IgnoreRedis 时只读本地 ristretto。
+// 原实现 `r, _ = _cache.Get(key)` 会无条件覆盖 redis 命中值，导致本地 miss 时
+// 恒返回空串（多实例登录态校验必然失败），redis 层形同虚设。
 func Get(key string, ps ...*Param) string {
 	p := _handleParam(ps)
-	var r string
 	if rediskit.HasConfig() && !p.IgnoreRedis {
-		r0 := rediskit.Get(context.Background(), rediskit.GetKeyWithPrefix(key), "")
-		if r0 != "" {
-			r = r0
-		}
+		return rediskit.Get(context.Background(), rediskit.GetKeyWithPrefix(key), "")
 	}
-	r, _ = _cache.Get(key)
+	r, _ := _cache.Get(key)
 	return r
 }
 

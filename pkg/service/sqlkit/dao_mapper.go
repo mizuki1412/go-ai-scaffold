@@ -183,7 +183,8 @@ func (dao Dao[T]) UpdateObj(dest *T) int64 {
 			continue
 		}
 		// 针对class.MapString 采用merge方式 todo mysql
-		if (e.RStruct.Type.String() == "class.MapString" || e.RStruct.Type.String() == "class.MapStringSync") && sqlconst.IsPostgresType(dao.dataSource.Driver) {
+		// MapStringSync 自 P0 修复后仅支持指针字段形式（值形式会拷贝内嵌锁），两种写法都识别
+		if (e.RStruct.Type.String() == "class.MapString" || e.RStruct.Type.String() == "class.MapStringSync" || e.RStruct.Type.String() == "*class.MapStringSync") && sqlconst.IsPostgresType(dao.dataSource.Driver) {
 			builder = builder.Set(e.OriKey, squirrel.Expr("coalesce("+e.OriKey+",'{}'::jsonb) || ?", val))
 		} else {
 			builder = builder.Set(e.OriKey, val)

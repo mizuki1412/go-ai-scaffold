@@ -71,7 +71,7 @@ func buildSchemaByType(t reflect.Type) *ApiDocV3Schema {
 		schema.Type = SchemaTypeArray
 		schema.Items = &ApiDocV3Schema{Type: SchemaTypeInteger, Format: SchemaFormatInt64}
 		return schema
-	case "class.MapString", "class.MapStringSync":
+	case "class.MapString", "class.MapStringSync", "*class.MapStringSync":
 		schema.Type = SchemaTypeObject
 		schema.AdditionalProperties = &ApiDocV3Schema{} // 空schema表示任意类型
 		return schema

@@ -1,6 +1,8 @@
 package aikit
 
 import (
+	"fmt"
+
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/library/framekit"
 	"github.com/example/go-ai-scaffold/pkg/library/httpkit"
@@ -47,7 +49,15 @@ func (client *ChatModelClient) Request(messages []schema.Message) (*schema.ResSe
 		Stream:        true,
 		StreamOptions: schema.StreamOption{IncludeUsage: true},
 	}
-	overChan := make(chan bool)
+	// P0 修复：overChan 改带缓冲 + notifyOver 幂等通知——
+	// 流结束、请求出错、panic 兜底三条路径都可能触发通知，重复通知不能再阻塞/panic。
+	overChan := make(chan bool, 1)
+	notifyOver := func() {
+		select {
+		case overChan <- true:
+		default:
+		}
+	}
 	finalRes := &schema.ResSession{}
 	var finalUsage *schema.ResUsage
 	decoder.Recv(func(bytes []byte, over bool) {
@@ -68,12 +78,27 @@ func (client *ChatModelClient) Request(messages []schema.Message) (*schema.ResSe
 			}
 		}
 		if over {
-			overChan <- true
+			notifyOver()
 		}
 	})
 	go func() {
-		// 因为这里是阻塞的，需要起线程，否则overChan没执行到
-		httpkit.Request(httpkit.Req{
+		// P0 修复：
+		// ① goroutine 内 panic 无人 recover 会直接打崩整个进程（gin 的 Recover
+		//    中间件管不到业务自起的 goroutine），defer recover 兜底并通知调用方；
+		// ② 原用 httpkit.Request（错误即 panic）且未设 Timeout——流挂起时
+		//    <-overChan 永久阻塞（goroutine + 调用方双泄漏）。改用 RequestE
+		//    返回错误，并携带超时（配置缺省时兜底 300s）。
+		defer func() {
+			if err := recover(); err != nil {
+				logkit.ErrorException(exception.New(fmt.Sprint(err), 3))
+				notifyOver()
+			}
+		}()
+		timeout := client.Config.Timeout
+		if timeout <= 0 {
+			timeout = 300
+		}
+		_, _, err := httpkit.RequestE(httpkit.Req{
 			Url:         client.Config.BaseURL,
 			Method:      "post",
 			ContentType: "application/json",
@@ -82,10 +107,15 @@ func (client *ChatModelClient) Request(messages []schema.Message) (*schema.ResSe
 			},
 			JsonData: req,
 			Stream:   true,
+			Timeout:  timeout,
 			StreamHandler: func(data []byte) {
 				decoder.Put(data)
 			},
 		})
+		if err != nil {
+			logkit.Error("chat model request failed: " + err.Error())
+			notifyOver()
+		}
 	}()
 
 	<-overChan

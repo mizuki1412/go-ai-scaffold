@@ -30,9 +30,19 @@ func New(id any) Claims {
 	}
 }
 
+// secretKey 返回 JWT 签名密钥。未配置时直接 panic：
+// 空密钥/可预测默认密钥意味着任何人都能伪造任意用户的 token（P0 安全修复）。
+func secretKey() []byte {
+	s := configkit.GetString(configkey.JwtSecretKey)
+	if s == "" {
+		panic(exception.New("jwt 密钥未配置（jwt.secretKey），禁止以空密钥签发/解析 token"))
+	}
+	return []byte(s)
+}
+
 func (c Claims) Token() string {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	s, err := t.SignedString([]byte(configkit.GetString(configkey.JwtSecretKey)))
+	s, err := t.SignedString(secretKey())
 	if err != nil {
 		panic(exception.New("jwt token err: " + err.Error()))
 	}
@@ -64,7 +74,7 @@ func (c Claims) IsValid() bool {
 
 func Parse(token string) Claims {
 	t, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
-		return []byte(configkit.GetString(configkey.JwtSecretKey)), nil
+		return secretKey(), nil
 	})
 
 	if claims, ok := t.Claims.(*Claims); ok && t.Valid {

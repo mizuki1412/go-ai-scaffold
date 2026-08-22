@@ -49,7 +49,7 @@ func bindDefaultFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool(configkey.RestPPROF, false, "开启pprof, /debug/pprof")
 
 	cmd.PersistentFlags().Int(configkey.JwtExpire, 6, "jwt 过期时间/小时")
-	cmd.PersistentFlags().String(configkey.JwtSecretKey, "0123456789abcdef", "jwt 密钥")
+	cmd.PersistentFlags().String(configkey.JwtSecretKey, "", "jwt 密钥（必填；为空时签发/解析 token 将直接报错，禁止使用可预测的默认密钥）")
 
 	cmd.PersistentFlags().String(configkey.DBDriver, "", "postgres/mysql/mssql")
 	cmd.PersistentFlags().String(configkey.DBHost, "", "")
