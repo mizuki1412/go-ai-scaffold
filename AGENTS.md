@@ -4,16 +4,16 @@ Go scaffold for vibe-coding REST services (gin + viper + cobra + sqlx/squirrel +
 
 ## Must read first
 
-`.trae/skills/scaffold-{generate,rename,configure}/SKILL.md` — codified workflows for creating CRUD modules, renaming the project, and toggling service kits.
+`doc/effective_go.md` — 编写本项目代码的规范依据（三源融合知识图谱：官方 Effective Go + 《Go专家编程》+ 《Mastering Go》，基准 Go 1.25，末章含本项目对照审计清单）。
 
 ## Current state (verified)
 
-- **Build is currently broken** (pre-existing): `main.go:28` calls `cmd.FrontDaoCMDNext(...)` which does not exist. Don't chase this as your own bug; if a task requires compiling, fix or restore `main.go` first.
-- No tests, no lint config, no CI. The required verification for every change is:
+- Build, vet, gofmt and tests all green (verified 2026-08-22, after the audit round that closed 27 findings). The required verification for every change is:
   ```
-  go build ./... && go vet ./... && gofmt -l .
+  go build ./... && go vet ./... && gofmt -l . && go test ./...
   ```
-- Module path `github.com/example/go-ai-scaffold` and project name `go-ai-scaffold` are placeholders; rename via `scaffold-rename` skill before use.
+- Tests cover pkg infra only (4 files: `pkg/class`, `pkg/library/cmdkit`, `pkg/library/cryptokit`, `pkg/library/framekit`); no `mod/` tests, no lint config, no CI.
+- Module path `github.com/example/go-ai-scaffold` and project name `go-ai-scaffold` are placeholders; rename (go.mod module path + import prefixes, at minimum) before reuse.
 - Only one business module: `mod/user/`.
 
 ## Layout
@@ -22,7 +22,7 @@ Go scaffold for vibe-coding REST services (gin + viper + cobra + sqlx/squirrel +
 pkg/                          # reusable infra, MUST NOT depend on mod/*
   class/                        nullable DB wrappers: String, Int64, Time, Decimal, ArrInt, MapString, File, etc.
   library/*kit/                 pure utility packages
-  service/*kit/                 infra kits: restkit, sqlkit, configkit, logkit, jwtkit, rediskit, aikit, mqttkit, netkit
+  service/*kit/                 infra kits: restkit, sqlkit, configkit, logkit, jwtkit, rediskit, aikit, mqttkit, netkit, cachekit, cronkit, excelkit, pdfkit, serialkit, storagekit
   cli/                          cobra root command + viper config binding
 mod/<name>/                   # business module, strict 4 layers
   mod.go                        All() []func(*router.Router) — aggregate each resource's Init
@@ -88,6 +88,7 @@ router.Group("/user/login").Post("", Login).Api(
 - Mandatory: `Tag`, `Summary`.
 - Guard with `middleware.AuthJWT()`; open endpoints get `openapi.Security(nil)`.
 - All auth endpoints check JWT (stores uid only); logout via `ctx.DestroyJwt()`.
+- Session model (sliding): a server-side whitelist key `token:<raw-token>` gates every authenticated request. `jwt.idle` (default 1h) is the idle window — `AuthJWT` renews it via `cachekit.Renew` on each authenticated request; `jwt.expire` (default 168h) is the absolute cap baked into the JWT exp. Set `jwt.idle<=0` to disable sliding (TTL = expire, legacy behavior).
 
 ### Response format
 ```json
@@ -98,10 +99,10 @@ router.Group("/user/login").Post("", Login).Api(
 
 ### Sensitive fields / security
 - `Pwd` and similar must be `json:"-"`.
-- Codebase still uses MD5 for passwords (`cryptokit.MD5`); new code must use bcrypt/scrypt/argon2.
+- Passwords use bcrypt (`cryptokit.HashPwd`/`CheckPwd`); legacy MD5 hashes are lazily upgraded to bcrypt on successful login (`cryptokit.NeedUpgrade`). Never write new MD5 password code.
 - Never hardcode secrets/connection strings.
 - Delete operations must nullify unique fields (phone, username) to avoid dirty data.
 
 ## Adding a module
 
-Use `scaffold-generate` skill. Wire the controller's `Init` into `mod.go` `All()` and register in `main.go`. Verify: `go build ./... && go vet ./... && gofmt -l .`.
+Follow the Layout & Conventions above (model → dao → service → controller). Wire the controller's `Init` into `mod.go` `All()` and register in `main.go`. Verify: `go build ./... && go vet ./... && gofmt -l . && go test ./...`.

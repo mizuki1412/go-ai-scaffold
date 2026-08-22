@@ -33,7 +33,5 @@ logs/
 # vendor/
 
 # OpenCode config
-opencode.json
 .env
 .env.local
-.opencode/skills/overwrite-pkg

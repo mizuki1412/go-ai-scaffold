@@ -35,8 +35,13 @@ func (ctx *Context) SetJwtCookie(c jwtkit.Claims, token string) {
 		if maxAge < 0 {
 			maxAge = 0
 		}
-		// 缓存 token，用于 AuthJWT 校验和 DestroyJwt 注销
-		cachekit.Set("token:"+token, "1", &cachekit.Param{Ttl: time.Duration(maxAge) * time.Second})
+	}
+	// 缓存 token，用于 AuthJWT 校验和 DestroyJwt 注销。
+	// 白名单 TTL 用空闲窗口（jwt.idle）实现滑动续期：活跃会话由 AuthJWT 每次鉴权通过
+	// 即 Renew 重置；JWT 自身 exp（jwt.expire）是绝对上限，仍由 AuthJWT 兜底校验。
+	// idle<=0 时退化为旧行为（无滑动，TTL 与 exp 对齐）。
+	if idle := jwtkit.IdleTtl(); idle > 0 {
+		cachekit.Set("token:"+token, "1", &cachekit.Param{Ttl: idle})
 	} else {
 		cachekit.Set("token:"+token, "1")
 	}

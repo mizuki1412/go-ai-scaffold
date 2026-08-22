@@ -68,7 +68,8 @@ func bindDefaultFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Int(configkey.RestWriteTimeout, 0, "响应写超时/秒；0不限制(SSE等长连接场景必须保持0)")
 	cmd.PersistentFlags().Int(configkey.RestIdleTimeout, 120, "keep-alive空闲连接回收/秒，0不限制")
 
-	cmd.PersistentFlags().Int(configkey.JwtExpire, 6, "jwt 过期时间/小时")
+	cmd.PersistentFlags().Int(configkey.JwtExpire, 168, "jwt 过期时间/小时（会话绝对上限：连续活跃也会到期，须重新登录）")
+	cmd.PersistentFlags().Int(configkey.JwtIdle, 1, "jwt 空闲窗口/小时（滑动续期：每次鉴权通过即重置；<=0 退化为不滑动）")
 	cmd.PersistentFlags().String(configkey.JwtSecretKey, "", "jwt 密钥（必填；为空时签发/解析 token 将直接报错，禁止使用可预测的默认密钥）")
 
 	cmd.PersistentFlags().String(configkey.DBDriver, "", "postgres/mysql/mssql")

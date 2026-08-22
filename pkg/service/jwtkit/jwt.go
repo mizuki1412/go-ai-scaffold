@@ -30,6 +30,17 @@ func New(id any) Claims {
 	}
 }
 
+// IdleTtl 返回会话空闲窗口时长（jwt.idle 小时）。
+// SetJwtCookie 写白名单与 AuthJWT 滑动续期共用；jwt.idle<=0（未配置或显式禁用）时
+// 退化为旧语义：窗口=过期时间（jwt.expire），即不滑动。
+func IdleTtl() time.Duration {
+	idle := configkit.GetInt(configkey.JwtIdle)
+	if idle <= 0 {
+		idle = configkit.GetInt(configkey.JwtExpire)
+	}
+	return time.Duration(idle) * time.Hour
+}
+
 // secretKey 返回 JWT 签名密钥。未配置时直接 panic：
 // 空密钥/可预测默认密钥意味着任何人都能伪造任意用户的 token（P0 安全修复）。
 func secretKey() []byte {
