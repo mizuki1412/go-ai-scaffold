@@ -103,6 +103,7 @@ func bindDefaultFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(configkey.MQTTClientID, "client", "")
 	cmd.PersistentFlags().String(configkey.MQTTUsername, "", "")
 	cmd.PersistentFlags().String(configkey.MQTTPwd, "", "")
+	cmd.PersistentFlags().Bool(configkey.MQTTInsecureSkipVerify, false, "mqtt ssl 连接跳过 TLS 证书校验（自签证书场景显式开启）")
 	// netkit
 	cmd.PersistentFlags().String(configkey.NetPort, "", "")
 

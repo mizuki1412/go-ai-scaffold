@@ -24,6 +24,8 @@ func New() *Client {
 			Id:       configkit.GetString(configkey.MQTTClientID, cryptokit.ID()),
 			Username: configkit.GetString(configkey.MQTTUsername),
 			Pwd:      configkit.GetString(configkey.MQTTPwd),
+			// ssl:// 连接时是否跳过证书校验，默认 false（校验证书，见 P2-2）
+			InsecureSkipVerify: configkit.GetBool(configkey.MQTTInsecureSkipVerify),
 		})
 	})
 	return client
