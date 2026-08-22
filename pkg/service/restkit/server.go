@@ -55,6 +55,24 @@ func defaultEngine() {
 	//router.OnError(middleware.Cors())
 }
 
+// newHTTPServer 构造带超时配置的 http.Server。
+// P1 修复：原来四项超时全缺，慢客户端可无限占用连接（slowloris 攻击面）。
+// WriteTimeout 默认 0（不限制）：脚手架含 SSE 长连接场景（ssehelper），
+// 写超时会把事件流截断；其余三项给出安全默认值，均可经配置覆盖。
+func newHTTPServer(addr string, handler http.Handler) *http.Server {
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadTimeout:       time.Duration(configkit.GetInt(configkey.RestReadTimeout, 60)) * time.Second,
+		ReadHeaderTimeout: time.Duration(configkit.GetInt(configkey.RestReadHeaderTimeout, 10)) * time.Second,
+		IdleTimeout:       time.Duration(configkit.GetInt(configkey.RestIdleTimeout, 120)) * time.Second,
+	}
+	if writeTimeout := configkit.GetInt(configkey.RestWriteTimeout, 0); writeTimeout > 0 {
+		srv.WriteTimeout = time.Duration(writeTimeout) * time.Second
+	}
+	return srv
+}
+
 func Run(listeners ...net.Listener) error {
 	if router == nil {
 		defaultEngine()
@@ -62,14 +80,9 @@ func Run(listeners ...net.Listener) error {
 	port := configkit.GetString(configkey.RestServerPort)
 	router.RegisterSwagger()
 	if len(listeners) == 0 {
-		server = &http.Server{
-			Addr:    ":" + port,
-			Handler: router,
-		}
+		server = newHTTPServer(":"+port, router)
 	} else {
-		server = &http.Server{
-			Handler: router,
-		}
+		server = newHTTPServer("", router)
 		port = cast.ToString(listeners[0].Addr().(*net.TCPAddr).Port)
 	}
 	go func() {

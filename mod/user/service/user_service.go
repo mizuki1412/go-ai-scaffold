@@ -21,17 +21,28 @@ import (
 
 // Login 合并 loginByUsername 和 login，返回用户。
 // 调用方负责创建 JWT、设置 cookie、调用 AdditionLoginFunc 等 HTTP 层逻辑。
+// P1 修复（MD5→bcrypt 迁移）：改为取回用户后在 Go 侧校验密码——
+// bcrypt 哈希无法用 DB 等值查询匹配；校验兼容存量 MD5，命中即惰性升级为 bcrypt 重存。
 func Login(username, phone, pwd string) *model.User {
 	if stringkit.IsNull(username) && stringkit.IsNull(phone) {
 		panic(exception.New("用户名或手机号缺失"))
 	}
 	username = strings.TrimSpace(username)
 	phone = strings.TrimSpace(phone)
-	pwd = cryptokit.MD5(pwd)
 	dao := userdao.New(userdao.OptsDefault)
-	user := dao.Login(pwd, username, phone)
-	if user == nil {
+	var user *model.User
+	if !stringkit.IsNull(username) {
+		user = dao.FindByUsername(username)
+	} else {
+		user = dao.FindByPhone(phone)
+	}
+	if user == nil || !cryptokit.CheckPwd(pwd, user.Pwd.String) {
 		panic(exception.New("账号和密码不匹配"))
+	}
+	if cryptokit.NeedUpgrade(user.Pwd.String) {
+		// 惰性升级：存量 MD5 密码在登录成功时改存为 bcrypt
+		user.Pwd.Set(cryptokit.HashPwd(pwd))
+		dao.UpdateObj(user)
 	}
 	if user.Status.Int32 == model.UserStatusFreeze {
 		panic(exception.New("账户被冻结"))
@@ -56,10 +67,10 @@ func UpdatePwd(uid int64, oldPwd, newPwd string) {
 	if user == nil { // B1: nil check
 		panic(exception.New("用户不存在"))
 	}
-	if user.Pwd.String != cryptokit.MD5(oldPwd) {
+	if !cryptokit.CheckPwd(oldPwd, user.Pwd.String) {
 		panic(exception.New("原密码错误"))
 	}
-	user.Pwd.Set(cryptokit.MD5(newPwd))
+	user.Pwd.Set(cryptokit.HashPwd(newPwd))
 	dao.UpdateObj(user)
 }
 
@@ -124,10 +135,10 @@ func UpdateUserInfo(uid int64, params UpdateUserInfoParams) {
 		if user == nil { // B4: nil check
 			panic(exception.New("用户不存在"))
 		}
-		if user.Pwd.String != cryptokit.MD5(params.OldPwd.String) {
+		if !cryptokit.CheckPwd(params.OldPwd.String, user.Pwd.String) {
 			panic(exception.New("原密码错误"))
 		}
-		user.Pwd.Set(cryptokit.MD5(params.NewPwd.String))
+		user.Pwd.Set(cryptokit.HashPwd(params.NewPwd.String))
 	}
 	dao.UpdateObj(u)
 }
@@ -199,7 +210,7 @@ func AddUser(params AddUserParams, checkSms bool) *model.User {
 		u.Username.Set(params.Username)
 	}
 	if params.Pwd.Valid {
-		u.Pwd.Set(cryptokit.MD5(params.Pwd.String))
+		u.Pwd.Set(cryptokit.HashPwd(params.Pwd.String))
 	}
 	if params.Name.Valid {
 		u.Name.Set(params.Name)
@@ -288,7 +299,7 @@ func UpdateUser(params UpdateUserParams) {
 		u.Image.Set(params.Image)
 	}
 	if params.Pwd.Valid && params.Pwd.String != "" {
-		u.Pwd.Set(cryptokit.MD5(params.Pwd.String))
+		u.Pwd.Set(cryptokit.HashPwd(params.Pwd.String))
 	}
 	if params.Gender != 0 {
 		u.Gender.Set(params.Gender)

@@ -62,6 +62,12 @@ func New(opts CascadeOpts, ds ...*sqlkit.DataSource) Dao {
 	return Dao{dao.WithCascadeBatchLinks(opts, links...)}
 }
 
+// Login 按用户名/手机号+密码（等值）查询用户。
+//
+// Deprecated: 密码已迁移 bcrypt——服务层 Login 改为"先取回用户、Go 内校验、
+// 惰性升级"（cryptokit.CheckPwd/HashPwd/NeedUpgrade）。bcrypt 哈希带随机盐，
+// 同一密码每次结果不同，不适合 DB 等值匹配（pwd=? 永远查不中），此方法仅作
+// 兼容保留，请勿新增调用。
 func (dao Dao) Login(pwd, username, phone string) *model.User {
 	builder := dao.Select()
 	if !stringkit.IsNull(username) {

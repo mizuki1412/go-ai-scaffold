@@ -59,13 +59,19 @@ func Run(command []string, params ...RunParams) (string, error) {
 			return "", err
 		}
 		if param.Timeout > 0 {
-			to := make(chan map[string]any)
+			// P1 修复：to 改带缓冲——超时分支返回后，结果 goroutine 仍能完成投递并退出，
+			// 原无缓冲写法会让它在 `to <-` 上永久阻塞（goroutine 泄漏）
+			to := make(chan map[string]any, 1)
 			go func() {
 				ret0, err2 := getRet(stdout, stderr, cmd)
 				to <- map[string]any{"ret": ret0, "err": err2}
 			}()
 			select {
 			case <-time.After(time.Duration(param.Timeout) * time.Second):
+				// P1 修复：超时必须杀掉子进程，否则子进程残留继续运行
+				if cmd.Process != nil {
+					_ = cmd.Process.Kill()
+				}
 				return "", errors.New("cmd timeout:" + name)
 			case m := <-to:
 				ret := m["ret"].(string)

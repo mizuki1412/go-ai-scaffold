@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"errors"
+
+	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -8,14 +11,26 @@ import (
 
 // 这里将在 run 之后执行
 func loadConfig() {
-	if viper.GetString("config") != "" {
+	explicit := viper.GetString("config") != ""
+	if explicit {
 		viper.SetConfigFile(viper.GetString("config"))
 	} else {
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
 		viper.AddConfigPath(".")
 	}
-	_ = viper.ReadInConfig()
+	err := viper.ReadInConfig()
+	if err == nil {
+		return
+	}
+	// P1 修复：原实现吞掉全部错误。搜索模式下「未找到配置文件」属正常（纯 flag/环境变量启动）；
+	// 但显式指定路径（-c）缺失、或 YAML 解析失败必须报错——
+	// 否则服务会带着默认配置静默起跑（叠加空 JWT 密钥等问题，隐患极大）。
+	var cfgNotFound viper.ConfigFileNotFoundError
+	if !explicit && errors.As(err, &cfgNotFound) {
+		return
+	}
+	panic(exception.New("配置文件加载失败: " + err.Error()))
 }
 
 func bindDefaultFlags(cmd *cobra.Command) {
@@ -47,6 +62,11 @@ func bindDefaultFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(configkey.RestServerPort, "10000", "")
 	cmd.PersistentFlags().String(configkey.RestRequestBodySize, "", "限制request最大，单位MB")
 	cmd.PersistentFlags().Bool(configkey.RestPPROF, false, "开启pprof, /debug/pprof")
+
+	cmd.PersistentFlags().Int(configkey.RestReadTimeout, 60, "读完整请求(含body)超时/秒，0不限制")
+	cmd.PersistentFlags().Int(configkey.RestReadHeaderTimeout, 10, "读请求头超时/秒(防slowloris慢速攻击)，0不限制")
+	cmd.PersistentFlags().Int(configkey.RestWriteTimeout, 0, "响应写超时/秒；0不限制(SSE等长连接场景必须保持0)")
+	cmd.PersistentFlags().Int(configkey.RestIdleTimeout, 120, "keep-alive空闲连接回收/秒，0不限制")
 
 	cmd.PersistentFlags().Int(configkey.JwtExpire, 6, "jwt 过期时间/小时")
 	cmd.PersistentFlags().String(configkey.JwtSecretKey, "", "jwt 密钥（必填；为空时签发/解析 token 将直接报错，禁止使用可预测的默认密钥）")

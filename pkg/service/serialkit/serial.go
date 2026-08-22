@@ -1,11 +1,13 @@
 package serialkit
 
 import (
+	"sync/atomic"
+	"time"
+
 	"github.com/albenik/go-serial/v2"
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/library/timekit"
 	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"time"
 )
 
 type Config struct {
@@ -19,7 +21,8 @@ type Config struct {
 var connect *serial.Port
 
 // 外部控制receive逻辑中断
-var interrupt bool
+// P1 修复：原为普通 bool，被 Receive goroutine 与 Interrupt() 跨 goroutine 读写（数据竞争）
+var interrupt atomic.Bool
 
 func ListPorts() []string {
 	ports, err := serial.GetPortsList()
@@ -67,7 +70,7 @@ func Receive(handle func([]byte, []byte) ([]byte, bool), timeoutMill int) chan [
 	if connect == nil {
 		panic(exception.New("please open serial first"))
 	}
-	interrupt = false
+	interrupt.Store(false)
 	chRun := make(chan []byte)
 	now := time.Now()
 	go func(ch chan []byte) {
@@ -75,7 +78,7 @@ func Receive(handle func([]byte, []byte) ([]byte, bool), timeoutMill int) chan [
 		buff := make([]byte, 100)
 		// non-block
 		for {
-			if interrupt {
+			if interrupt.Load() {
 				logkit.Error("serial interrupt")
 				ch <- nil
 				close(ch)
@@ -90,7 +93,9 @@ func Receive(handle func([]byte, []byte) ([]byte, bool), timeoutMill int) chan [
 			}
 			if n == 0 {
 				// timeout
-				if time.Now().After(now.Add(time.Duration(timeoutMill) * time.Millisecond)) {
+				// P1 修复：timeoutMill<=0 表示不处理超时（对齐注释语义）。
+				// 原实现 `After(now+0)` 恒为真，0 会变成「首次空读立即超时」，语义相反
+				if timeoutMill > 0 && time.Now().After(now.Add(time.Duration(timeoutMill)*time.Millisecond)) {
 					ch <- nil
 					close(ch)
 					break
@@ -117,5 +122,5 @@ func Close() {
 }
 
 func Interrupt() {
-	interrupt = true
+	interrupt.Store(true)
 }

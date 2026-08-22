@@ -225,7 +225,11 @@ func (ctx *Context) bindStruct(bean any) {
 	isJson := strings.Index(ctx.Request.Header.Get("content-type"), "application/json") >= 0
 	if isJson {
 		// 直接转为bean
-		_ = ctx.Proxy.ShouldBindJSON(bean)
+		// P1 修复：原实现 `_ =` 吞掉绑定错误——非法 JSON 会静默变成零值 bean，
+		// 与 form 路径（明确报错）行为不一致，必填项靠 validator 兜底、非必填项静默丢失
+		if err := ctx.Proxy.ShouldBindJSON(bean); err != nil {
+			panic(exception.New("请求数据解析失败: " + err.Error()))
+		}
 		return
 	}
 	for i := 0; i < rt.NumField(); i++ {

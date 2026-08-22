@@ -8,6 +8,7 @@ import (
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/library/c"
+	"github.com/example/go-ai-scaffold/pkg/service/logkit"
 	"github.com/example/go-ai-scaffold/pkg/service/rediskit"
 )
 
@@ -67,7 +68,9 @@ func Set(key string, value string, ps ...*Param) {
 		res = _cache.Set(key, value, p.Cost)
 	}
 	if !res {
-		panic(exception.New("cache failed: " + key))
+		// P1 修复：ristretto Set 返回 false 是高负载下的常态（写缓冲满 / cost 超限），
+		// 缓存写入失败不应打断业务（原 panic 会被 middleware 转成 500），记日志降级即可
+		logkit.Error("cache set rejected (buffer full or cost exceeded): " + key)
 	}
 }
 
