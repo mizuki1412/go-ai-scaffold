@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -17,6 +18,11 @@ import (
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
 )
+
+// DefaultTimeout P2 修复：Req.Timeout<=0 且 Req.Ctx 为 nil 时的兜底超时。
+// 原实现两者皆空时请求完全无超时，对端挂起即永久泄漏 goroutine；
+// 需要无限时长的调用方请显式传 Ctx（自行控制 deadline/cancel）。
+const DefaultTimeout = 2 * time.Minute
 
 // Doer 抽象 http.Client 的 Do 方法，便于测试 mock。
 // 通过 DefaultDoer 变量注入，可在测试中替换为自定义实现。
@@ -107,11 +113,19 @@ func RequestE(reqParams Req) ([]byte, int, error) {
 	}
 
 	// H1: 超时通过 context 传递，避免并发修改共享 client.Timeout 造成竞态
+	// P2 修复：Timeout<=0 且 Ctx 为 nil 时兜底 DefaultTimeout，杜绝无超时请求
 	ctx := reqParams.Ctx
 	if ctx == nil {
-		ctx = context.Background()
-	}
-	if reqParams.Timeout > 0 {
+		if reqParams.Timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(reqParams.Timeout)*time.Second)
+			defer cancel()
+		} else {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), DefaultTimeout)
+			defer cancel()
+		}
+	} else if reqParams.Timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(reqParams.Timeout)*time.Second)
 		defer cancel()
@@ -237,7 +251,8 @@ func readStream(body io.Reader, reqParams Req, statusCode int) ([]byte, int, err
 	}
 	for {
 		n, err := reader.Read(buffer)
-		if err != nil && err != io.EOF {
+		// P2 修复：err != io.EOF → errors.Is（§14.1：错误比较必须走错误链）
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, 0, err
 		}
 		if n > 0 {
@@ -250,7 +265,7 @@ func readStream(body io.Reader, reqParams Req, statusCode int) ([]byte, int, err
 				reqParams.StreamHandler(buffer[:n])
 			}
 		}
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if n == 0 {

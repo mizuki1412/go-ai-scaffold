@@ -20,7 +20,9 @@ func Init(router *router.Router) {
 	router.Group("/user/info").Use(middleware.AuthJWT()).Get("", Info).Api(openapi.Tag(tag), openapi.Summary("用户信息，刷新jwt"))
 	r := router.Group("/user", middleware.AuthJWT())
 	{
-		r.Get("/logout", Logout).Api(openapi.Tag(tag), openapi.Summary("登出"))
+		// P2 修复：logout/del 为状态变更操作，原走 GET（语义错误、易被预取/缓存/日志采集误触发），改 POST。
+		// BindForm 合并 PostForm/Query/Param，原有 query 传参方式依然兼容
+		r.Post("/logout", Logout).Api(openapi.Tag(tag), openapi.Summary("登出"))
 		r.Post("/updatePwd", UpdatePwd).Api(openapi.Tag(tag), openapi.Summary("密码修改"), openapi.ReqParam(updatePwdParam{}))
 		r.Post("/updateUserInfo", UpdateUserInfo).Api(openapi.Tag(tag), openapi.Summary("更新用户信息"), openapi.ReqBody(updateUserInfoParam{}))
 	}
@@ -35,6 +37,7 @@ func Init(router *router.Router) {
 	{
 		r2.Post("/add", AddUser).Api(openapi.Tag(tag), openapi.Summary("添加用户"), openapi.ReqBody(AddUserParams{}))
 		r2.Post("/update", UpdateUser).Api(openapi.Tag(tag), openapi.Summary("修改用户"), openapi.ReqBody(UpdateParams{}))
-		r2.Get("/del", DeleteUser).Api(openapi.Tag(tag), openapi.Summary("删除冻结用户"), openapi.ReqParam(DelParams{}))
+		// P2 修复：删除是状态变更操作，GET → POST
+		r2.Post("/del", DeleteUser).Api(openapi.Tag(tag), openapi.Summary("删除冻结用户"), openapi.ReqParam(DelParams{}))
 	}
 }

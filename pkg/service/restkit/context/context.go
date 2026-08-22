@@ -52,7 +52,9 @@ func (ctx *Context) BindForm(bean any) {
 	if len(body) > 1024 {
 		body = body[:1024]
 	}
-	logkit.Info("request-body", "jwt", ctx.Get("jwt-token"), "body", body)
+	// P2 修复：请求体含 phone/pwd 等 PII，Info 级会落进常规日志；
+	// 降为 debug（默认日志级别 info 下不打，排查时显式调 log.level=debug）
+	logkit.Debug("request-body", "jwt", ctx.Get("jwt-token"), "body", body)
 }
 
 // fieldKey 从 struct field 提取请求参数 key。

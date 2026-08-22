@@ -28,6 +28,9 @@ type ConnectParam struct {
 	Id       string
 	Username string
 	Pwd      string
+	// InsecureSkipVerify ssl:// 连接时是否跳过 TLS 证书校验（默认 false，校验证书）。
+	// P2 修复：原来 ssl 一律硬编码跳过校验，中间人攻击面大；现改为显式 opt-in。
+	InsecureSkipVerify bool
 }
 
 // 用于记录创建过的clients
@@ -63,9 +66,10 @@ func NewClient(param ConnectParam) *Client {
 		}
 	}
 	opts.SetOnConnectHandler(lostHan)
-	if strings.Index(param.Broker, "ssl:") == 0 {
+	// P2 修复：strings.Index(...)==0 → strings.HasPrefix（语义明确）
+	if strings.HasPrefix(param.Broker, "ssl:") {
 		opts.SetTLSConfig(&tls.Config{
-			InsecureSkipVerify: true, // 跳过证书验证
+			InsecureSkipVerify: param.InsecureSkipVerify, // 跳过证书验证（显式 opt-in）
 		})
 	}
 	newClient.C = MQTT.NewClient(opts)

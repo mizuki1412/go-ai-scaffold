@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
-	"net"
 
 	"github.com/example/go-ai-scaffold/pkg/library/bytekit"
 	"github.com/example/go-ai-scaffold/pkg/service/configkit"
@@ -42,38 +40,6 @@ func TCPServerCMD() *cobra.Command {
 	return cmd
 }
 
-func tcpServer(port string) {
-	service := ":" + port
-	// 绑定
-	tcpAddr, _ := net.ResolveTCPAddr("tcp", service)
-	// 监听
-	listener, _ := net.ListenTCP("tcp", tcpAddr)
-	for {
-		// 接受
-		conn, err := listener.Accept()
-		if err != nil {
-			continue
-		}
-		// 创建 Goroutine
-		go handleClient(conn)
-	}
-}
-
-func handleClient(conn net.Conn) {
-	// 逆序调用 Close() 保证连接能正常关闭
-	defer conn.Close()
-	var buf [512]byte
-	for {
-		// 接收数据
-		n, err := conn.Read(buf[0:])
-		if err != nil {
-			return
-		}
-		rAddr := conn.RemoteAddr()
-		fmt.Println("Receive from client", rAddr.String(), string(buf[0:n]))
-		_, err2 := conn.Write([]byte("Welcome client"))
-		if err2 != nil {
-			return
-		}
-	}
-}
+// P2 修复：删除死代码 tcpServer/handleClient——
+// 两函数无任何调用方，且 ResolveTCPAddr/ListenTCP 错误被忽略（nil deref）、
+// Accept 错误 continue 忙转；实际 TCP 服务已由 netkit（gnet）实现。

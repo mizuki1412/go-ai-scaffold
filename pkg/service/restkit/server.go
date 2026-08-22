@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
 	"github.com/example/go-ai-scaffold/pkg/service/configkit"
 	"github.com/example/go-ai-scaffold/pkg/service/logkit"
@@ -47,12 +47,33 @@ func defaultEngine() {
 	router.Use(middleware.Cors())
 	router.Use(middleware.Recover())
 	if configkit.GetBool(configkey.RestPPROF) {
-		//  p := pprof.New()
+		// P2 修复：原开关为空实现（死开关），接通 pprof 挂载。
+		// pprof 端点暴露运行时内部信息（堆、goroutine 栈等），仅开发/内网诊断时开启。
+		registerPprof(router.Proxy)
 	}
 	// max request size todo
 	//router.Proxy.Use(iris.LimitRequestBodySize(int64(configkit.GetInt(configkey.RestRequestBodySize, 100)) << 20))
 	// 其他错误如404，
 	//router.OnError(middleware.Cors())
+}
+
+// registerPprof 在 gin 引擎上挂载 net/http/pprof 端点（/debug/pprof/*），
+// 不走 Router 路由封装（openapi 元数据对诊断端点无意义），也不受 base path 影响。
+func registerPprof(engine *gin.Engine) {
+	g := engine.Group("/debug/pprof")
+	g.GET("", gin.WrapF(pprof.Index))
+	g.GET("/", gin.WrapF(pprof.Index))
+	g.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+	g.GET("/profile", gin.WrapF(pprof.Profile))
+	g.POST("/symbol", gin.WrapF(pprof.Symbol))
+	g.GET("/symbol", gin.WrapF(pprof.Symbol))
+	g.GET("/trace", gin.WrapF(pprof.Trace))
+	g.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
+	g.GET("/block", gin.WrapH(pprof.Handler("block")))
+	g.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	g.GET("/heap", gin.WrapH(pprof.Handler("heap")))
+	g.GET("/mutex", gin.WrapH(pprof.Handler("mutex")))
+	g.GET("/threadcreate", gin.WrapH(pprof.Handler("threadcreate")))
 }
 
 // newHTTPServer 构造带超时配置的 http.Server。
@@ -87,13 +108,16 @@ func Run(listeners ...net.Listener) error {
 	}
 	go func() {
 		logkit.Info("Listening and serving HTTP on " + port)
+		// P2 修复：serve 失败（端口占用等）时进程已不可用。
+		// 原裸 panic 在 goroutine 中表现为一屏无上下文堆栈后退出，
+		// 改为 Fatal：日志给出明确原因后以退出码 1 结束
 		if len(listeners) == 0 {
 			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				panic(exception.New(err.Error()))
+				logkit.Fatal("HTTP server serve error", "err", err.Error())
 			}
 		} else {
 			if err := server.Serve(listeners[0]); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				panic(exception.New(err.Error()))
+				logkit.Fatal("HTTP server serve error", "err", err.Error())
 			}
 		}
 	}()
@@ -116,13 +140,18 @@ func Run(listeners ...net.Listener) error {
 	return nil
 }
 
+// Shutdown 主动关停（与 Run 的信号触发关闭等价）。
+// P2 修复：原用 context.Background 无超时，连接不释放时 Shutdown 永久阻塞；
+// 与 Run 一致给 5s 优雅关闭窗口，超时后返回并由调用方决定后续（强杀或告警）。
 func Shutdown() {
-	if server != nil {
-		logkit.Info("Shutting down server...")
-		err := server.Shutdown(ctx.Background())
-		if err != nil {
-			logkit.Error(err.Error())
-		}
+	if server == nil {
+		return
+	}
+	logkit.Info("Shutting down server...")
+	ctxt, cancel := ctx.WithTimeout(ctx.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctxt); err != nil {
+		logkit.Error(err.Error())
 	}
 }
 

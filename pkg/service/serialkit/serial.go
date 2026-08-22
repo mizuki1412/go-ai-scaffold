@@ -117,6 +117,10 @@ func Receive(handle func([]byte, []byte) ([]byte, bool), timeoutMill int) chan [
 }
 
 func Close() {
+	// P2 修复：未 Open 过直接 Close 原会 nil deref panic
+	if connect == nil {
+		return
+	}
 	_ = connect.Close()
 	connect = nil
 }

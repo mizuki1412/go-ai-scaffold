@@ -77,9 +77,13 @@ func Parse(token string) Claims {
 		return secretKey(), nil
 	})
 
-	if claims, ok := t.Claims.(*Claims); ok && t.Valid {
-		return *claims
-	} else {
+	// P2 修复：ParseWithClaims 出错时返回的 t 为 nil，原实现直接访问 t.Claims
+	// 会 nil deref 而非给出清晰报错；先判 err
+	if err != nil {
 		panic(exception.New("jwt parse err: " + err.Error()))
 	}
+	if claims, ok := t.Claims.(*Claims); ok && t.Valid {
+		return *claims
+	}
+	panic(exception.New("jwt parse err: invalid token"))
 }

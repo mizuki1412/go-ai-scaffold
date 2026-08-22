@@ -3,11 +3,13 @@ package cmdkit
 import (
 	"bufio"
 	"errors"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/spf13/cast"
 	"io"
 	"os/exec"
+	"strings"
 	"time"
+
+	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/spf13/cast"
 )
 
 type RunParams struct {
@@ -94,15 +96,23 @@ func Run(command []string, params ...RunParams) (string, error) {
 }
 
 func getRet(stdout io.ReadCloser, stderr io.ReadCloser, cmd *exec.Cmd) (string, error) {
-	ret := ""
+	// P2 修复：ReadString 在「无尾换行的最后一行」时同时返回数据与 io.EOF，
+	// 原实现先判错 break 后拼接，会丢掉这一行；改为先追加再判错。
+	// 循环拼接改用 strings.Builder（§11.4：O(n) 拼接替代 O(n²) 的 ret += line）。
+	var sb strings.Builder
 	reader := bufio.NewReader(stdout)
+	var readErr error
 	for {
 		line, err2 := reader.ReadString('\n')
-		if err2 != nil || io.EOF == err2 {
+		sb.WriteString(line)
+		if err2 != nil {
+			if !errors.Is(err2, io.EOF) {
+				readErr = err2
+			}
 			break
 		}
-		ret += line
 	}
+	ret := sb.String()
 	bytesErr, err := io.ReadAll(stderr)
 	if err != nil {
 		return ret, err
@@ -113,5 +123,5 @@ func getRet(stdout io.ReadCloser, stderr io.ReadCloser, cmd *exec.Cmd) (string, 
 	if err = cmd.Wait(); err != nil {
 		return ret, err
 	}
-	return ret, nil
+	return ret, readErr
 }

@@ -111,3 +111,10 @@ func ErrorOrigin(msg string, args ...any) {
 		fileLogger.Error(msg, args...)
 	}
 }
+
+// Fatal 记录错误日志后以退出码 1 结束进程（跳过 defer，用于不可恢复的错误）。
+// 典型场景：HTTP serve 失败（端口被占用等）——进程已无法提供服务，继续运行没有意义。
+func Fatal(msg string, args ...any) {
+	ErrorOrigin(msg, args...)
+	os.Exit(1)
+}
