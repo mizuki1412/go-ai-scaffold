@@ -15,5 +15,6 @@ func main() {
 			_ = restkit.Run()
 		},
 	})
+	cli.AddChildCMDWithoutConfig(cli.VersionCMD())
 	cli.Execute()
 }

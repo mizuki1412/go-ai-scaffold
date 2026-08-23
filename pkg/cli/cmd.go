@@ -37,6 +37,14 @@ func AddChildCMD(command *cobra.Command) {
 	rootCmd.Root.AddCommand(command)
 }
 
+// AddChildCMDWithoutConfig 注册不依赖配置文件的子命令（如 version）。
+func AddChildCMDWithoutConfig(command *cobra.Command) {
+	if rootCmd.Root == nil {
+		panic("root cmd not config")
+	}
+	rootCmd.Root.AddCommand(command)
+}
+
 func Execute() {
 	// 自动设置cpu配额。 Go1.25版本已支持
 	//_, err := maxprocs.Set()

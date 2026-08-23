@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"errors"
+
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/service/logkit"
 	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
@@ -14,13 +16,18 @@ import (
 //   - handler 调用 Abort() 后 panic → 响应未写 → return 后客户端拿到空响应
 //
 // 改为：只要响应未写入就补写 JsonError，已写入则跳过避免 gin 重复写告警。
+// S30: errors.As 兼容 Exception 及其包装链；业务码非零时透传到响应 result，
+// 未指定(0)仍按 500 处理，保持历史行为不变。
 func Recover() router.Handler {
 	return func(ctx *context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				var msg string
-				if e, ok := err.(exception.Exception); ok {
+				var code = exception.CodeNone
+				var e exception.Exception
+				if errors.As(errToError(err), &e) {
 					msg = e.Msg
+					code = e.Code
 					// 带代码位置信息
 					logkit.ErrorException(e)
 				} else {
@@ -28,10 +35,26 @@ func Recover() router.Handler {
 					logkit.ErrorException(exception.New(msg, 3))
 				}
 				if !ctx.Proxy.Writer.Written() {
-					ctx.JsonError(msg)
+					if code == exception.CodeNone || code == context.ResultErr {
+						ctx.JsonError(msg)
+					} else {
+						ctx.JsonErrorCode(code, msg)
+					}
 				}
 			}
 		}()
 		ctx.Proxy.Next()
 	}
 }
+
+// errToError 把 panic value 归一为 error 以便走 errors.As 链路判定。
+func errToError(v any) error {
+	if e, ok := v.(error); ok {
+		return e
+	}
+	return castError{v}
+}
+
+type castError struct{ v any }
+
+func (c castError) Error() string { return cast.ToString(c.v) }

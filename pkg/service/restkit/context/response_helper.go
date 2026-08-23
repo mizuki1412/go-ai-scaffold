@@ -74,6 +74,14 @@ func (ctx *Context) JsonError(msg string) {
 	})
 }
 
+// JsonErrorCode 业务错误码响应：code 原样透传到 result（300~999 业务段 / 401 鉴权）。
+func (ctx *Context) JsonErrorCode(code int, msg string) {
+	ctx.Json(RestRet{
+		Result:  code,
+		Message: msg,
+	})
+}
+
 func (ctx *Context) SetFileHeader(filename string) {
 	ctx.Proxy.Header("Content-Disposition", "attachment; filename="+url.QueryEscape(filename))
 	ctx.Proxy.Header("Content-Type", "application/octet-stream")
