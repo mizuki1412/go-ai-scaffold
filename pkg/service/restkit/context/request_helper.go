@@ -11,7 +11,7 @@ import (
 var HeaderTokenKey = "Authorization"
 var CookieTokenKey = "token"
 
-// BearerPrefix Swagger UI / OpenAPI http/bearer scheme 发送 "Bearer <token>"。
+// BearerPrefix OpenAPI http/bearer scheme 客户端发送 "Bearer <token>"。
 const BearerPrefix = "Bearer "
 
 // JwtCookie 配置项。可在应用启动时通过 configkit 覆盖，或直接赋值。
@@ -31,7 +31,7 @@ func (ctx *Context) ReadToken() {
 		token, _ = ctx.Proxy.Cookie(CookieTokenKey)
 	}
 	if token != "" && token != "undefined" {
-		// 兼容 Swagger UI Authorize：http/bearer scheme 发送 "Bearer <token>"，需剥离前缀
+		// 兼容 OpenAPI http/bearer scheme：发送 "Bearer <token>"，需剥离前缀
 		token = strings.TrimPrefix(token, BearerPrefix)
 		_ = c.RecoverFuncWrapper(func() {
 			code := jwtkit.Parse(token)

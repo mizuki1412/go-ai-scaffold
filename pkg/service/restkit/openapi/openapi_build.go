@@ -373,19 +373,6 @@ func (doc *ApiDocV3) ReadDoc() *ApiDocV3 {
 	return doc
 }
 
-// SwaggerConfig swagger-ui 配置。
-func (doc *ApiDocV3) SwaggerConfig() map[string]any {
-	return map[string]any{
-		"configUrl":            "/v3/api-docs/swagger-config",
-		"oauth2RedirectUrl":    "/swagger-ui/oauth2-redirect.html",
-		"operationsSorter":     "alpha",
-		"persistAuthorization": true,
-		"tagsSorter":           "alpha",
-		"url":                  "/v3/api-docs",
-		"validatorUrl":         "",
-	}
-}
-
 // ==================== 内部：RestRet 父 schema ====================
 
 var resParentSchema string

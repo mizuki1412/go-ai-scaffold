@@ -1,17 +1,12 @@
 package router
 
 import (
-	"embed"
-	"io"
-	"mime"
 	"net/http"
-	"path"
 
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
 	"github.com/example/go-ai-scaffold/pkg/service/restkit/openapi"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/render"
 )
 
 type Router struct {
@@ -145,62 +140,8 @@ func (router *Router) Api(options ...func(opt *openapi.Builder)) *Router {
 	return router
 }
 
-// EmbedHtmlHandle 注意path pattern中加入{path:path}
-// url中path的路径前缀需要和root一致
-//
-// B8: 使用 io.ReadAll 一次性读取 + defer Close，修复文件句柄泄露与 1KB 循环低效读取。
-// B9: 无扩展名时默认 text/html，避免浏览器误判 MIME。
-func EmbedHtmlHandle(fs embed.FS, root string) func(c *context.Context) {
-	return func(c *context.Context) {
-		var assetPath string
-		pathName := c.Proxy.Param("action")
-		if root == "./knife-ui" {
-			if pathName == "" || pathName == "/" {
-				pathName = "doc.html"
-			} else {
-				pathName = "/webjars" + pathName
-			}
-		} else {
-			if pathName == "" || pathName == "/" {
-				pathName = "index.html"
-			}
-		}
-		assetPath = path.Join(root, pathName)
-		assets, err := fs.Open(assetPath)
-		if err != nil {
-			c.Proxy.Status(http.StatusBadRequest)
-			_, _ = c.Proxy.Writer.Write([]byte(err.Error()))
-			return
-		}
-		// B8: 必须关闭文件句柄，避免 embed.FS 句柄泄露
-		defer func() { _ = assets.Close() }()
-		data, err := io.ReadAll(assets)
-		if err != nil {
-			c.Proxy.Status(http.StatusInternalServerError)
-			_, _ = c.Proxy.Writer.Write([]byte(err.Error()))
-			return
-		}
-		// B9: mime 判断
-		contentType := mime.TypeByExtension(path.Ext(pathName))
-		if contentType == "" {
-			// 无扩展名或未识别：默认 text/html; charset=utf-8，
-			// 避免 render.Data 空 ContentType 时浏览器按二进制下载
-			contentType = "text/html; charset=utf-8"
-		}
-		c.Proxy.Render(http.StatusOK, render.Data{Data: data, ContentType: contentType})
-	}
-}
-
 func (router *Router) RegisterSwagger() {
 	router.getIgnoreOpenapi("/v3/api-docs", func(c *context.Context) {
 		c.Proxy.JSON(http.StatusOK, openapi.Doc.ReadDoc())
 	})
-	router.getIgnoreOpenapi("/v3/api-docs/swagger-config", func(c *context.Context) {
-		c.Proxy.JSON(http.StatusOK, openapi.Doc.SwaggerConfig())
-	})
-	// 第二个path表示匹配路径
-	router.getIgnoreOpenapi("/swagger/*action", EmbedHtmlHandle(openapi.UiAssets, "./swagger-ui"))
-	router.getIgnoreOpenapi("/swagger", EmbedHtmlHandle(openapi.UiAssets, "./swagger-ui"))
-	router.getIgnoreOpenapi("/doc.html", EmbedHtmlHandle(openapi.KUiAssets, "./knife-ui"))
-	router.getIgnoreOpenapi("/webjars/*action", EmbedHtmlHandle(openapi.KUiAssets, "./knife-ui"))
 }
