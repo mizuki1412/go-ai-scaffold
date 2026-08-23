@@ -169,7 +169,6 @@ func normalArray(arr any) (string, []any) {
 	return "(" + strings.Join(flags, ",") + ")", args
 }
 
-// 占位符
 func placeholder(driver string) squirrel.PlaceholderFormat {
 	switch driver {
 	case sqlconst.Postgres, sqlconst.Kingbase:

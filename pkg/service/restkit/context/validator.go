@@ -35,7 +35,6 @@ func validateValuer(field reflect.Value) any {
 		} else if val != nil {
 			return val
 		}
-		// handle the error how you want
 	}
 	return nil
 }

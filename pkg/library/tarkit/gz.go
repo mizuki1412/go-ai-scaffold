@@ -7,7 +7,6 @@ import (
 	"io"
 )
 
-// GZipBytes 压缩
 func GZipBytes(data []byte) []byte {
 	var input bytes.Buffer
 	g := gzip.NewWriter(&input)
@@ -20,7 +19,6 @@ func GZipBytes(data []byte) []byte {
 	return input.Bytes()
 }
 
-// UnGZipBytes 解压
 func UnGZipBytes(data []byte) []byte {
 	var in bytes.Buffer
 	in.Write(data)

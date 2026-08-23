@@ -68,10 +68,6 @@ func defaultEngine() {
 		// pprof 端点暴露运行时内部信息（堆、goroutine 栈等），仅开发/内网诊断时开启。
 		registerPprof(router.Proxy)
 	}
-	// max request size todo
-	//router.Proxy.Use(iris.LimitRequestBodySize(int64(configkit.GetInt(configkey.RestRequestBodySize, 100)) << 20))
-	// 其他错误如404，
-	//router.OnError(middleware.Cors())
 }
 
 // registerPprof 在 gin 引擎上挂载 net/http/pprof 端点（/debug/pprof/*），
@@ -148,7 +144,6 @@ func Run(listeners ...net.Listener) error {
 
 	ctxt, cancel := ctx.WithTimeout(ctx.Background(), 5*time.Second)
 	defer cancel()
-	// 执行自定义关机逻辑
 	CustomShutdownLogic(ctxt)
 	if err := server.Shutdown(ctxt); err != nil {
 		logkit.Error(err.Error())

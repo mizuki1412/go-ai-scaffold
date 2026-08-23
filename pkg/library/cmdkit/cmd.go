@@ -30,24 +30,12 @@ func Run(command []string, params ...RunParams) (string, error) {
 	} else {
 		param = params[0]
 	}
-	//var cmdName string
-	//var arg1 string
-	//switch runtime.GOOS {
-	//case "darwin", "linux":
-	//	cmdName = "/bin/sh"
-	//	arg1 = "-c"
-	//case "windows":
-	//	cmdName = "cmd"
-	//	arg1 = "/C"
-	//}
 	name := command[0]
 	var args []string
 	if len(command) > 1 {
 		args = command[1:]
 	}
 	cmd := exec.Command(name, args...)
-	// 程序退出时Kill子进程
-	//cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if !param.Async {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {

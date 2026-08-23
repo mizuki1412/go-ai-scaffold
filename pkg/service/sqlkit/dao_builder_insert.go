@@ -55,8 +55,6 @@ func (dao InsertDao[T]) ToSql() (string, []any, error) {
 	return sqls, argsWrap(dao.dataSource.Driver, args), err
 }
 
-// SQL methods
-
 // Prefix 在 sql 前写入语句
 func (dao InsertDao[T]) Prefix(sql string, args ...any) InsertDao[T] {
 	dao.builder = dao.builder.Prefix(sql, args...)
@@ -96,8 +94,3 @@ func (dao InsertDao[T]) Select(sb SelectDao[T]) InsertDao[T] {
 	dao.builder = dao.builder.Values(sb.builder)
 	return dao
 }
-
-//func (b InsertDao[T) SetMap(clauses map[string]any) InsertDao[T {
-//	b.builder = b.builder.SetMap(clauses)
-//	return b
-//}

@@ -40,7 +40,6 @@ func Map2Struct(m map[string]any, bean any) {
 		field := rt.Field(i)
 		fieldV := rv.Field(i)
 		name := strings.Split(field.Tag.Get("json"), ",")[0]
-		// 判断是否为忽略字段
 		if name == "-" {
 			continue
 		}
@@ -48,19 +47,14 @@ func Map2Struct(m map[string]any, bean any) {
 		if name == "" {
 			name = field.Name
 		}
-		//获取value值
 		v, ok := m[name]
 		if !ok {
 			continue
 		}
-		//获取指定字段的类型
 		kind := fieldV.Kind()
-		// 若字段为指针类型
 		if kind == reflect.Ptr {
-			// 获取对应字段的kind
 			kind = fieldV.Type().Elem().Kind()
 		}
-		// 设置对应字段的值
 		switch kind {
 		case reflect.Bool:
 			fieldV.SetBool(cast.ToBool(v))

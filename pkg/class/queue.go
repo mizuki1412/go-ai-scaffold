@@ -3,7 +3,6 @@ package class
 import "sync"
 
 type (
-	//Queue 队列
 	Queue[T any] struct {
 		top    *node[T]
 		rear   *node[T]
@@ -19,17 +18,14 @@ type (
 	}
 )
 
-// NewQueue Create a new queue
 func NewQueue[T any]() *Queue[T] {
 	return &Queue[T]{}
 }
 
-// Len 获取队列长度
 func (th *Queue[T]) Len() int {
 	return th.length
 }
 
-// Peek 返回队列顶端元素
 func (th *Queue[T]) Peek() *T {
 	if th.top == nil {
 		return nil
@@ -37,7 +33,6 @@ func (th *Queue[T]) Peek() *T {
 	return &th.top.value
 }
 
-// Push 入队操作
 func (th *Queue[T]) Push(v T) {
 	th.lock1.Lock()
 	defer th.lock1.Unlock()
@@ -53,7 +48,6 @@ func (th *Queue[T]) Push(v T) {
 	th.length++
 }
 
-// Pop 出队操作
 func (th *Queue[T]) Pop() *T {
 	th.lock2.Lock()
 	defer th.lock2.Unlock()

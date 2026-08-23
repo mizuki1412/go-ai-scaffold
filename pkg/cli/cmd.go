@@ -47,7 +47,6 @@ func AddChildCMDWithoutConfig(command *cobra.Command) {
 
 func Execute() {
 	// 自动设置cpu配额。 Go1.25版本已支持
-	//_, err := maxprocs.Set()
 	if rootCmd.Root == nil {
 		panic("root cmd not config")
 	}

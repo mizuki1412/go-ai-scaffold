@@ -2,7 +2,7 @@ package sqlconst
 
 const (
 	Postgres  = "postgres"
-	Kingbase  = "kingbase" // todo
+	Kingbase  = "kingbase"
 	Mysql     = "mysql"
 	SqlServer = "mssql"
 	Oracle    = "oracle"

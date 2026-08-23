@@ -38,7 +38,6 @@ func (ctx *Context) Get(key string) any {
 // BindForm bean 指针、bean 必须是 struct 定义过的
 func (ctx *Context) BindForm(bean any) {
 	ctx.bindStruct(bean)
-	// validator
 	err := Validator.Struct(bean)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
@@ -226,7 +225,6 @@ func (ctx *Context) bindStruct(bean any) {
 	// 取json和取form只能同时进行一次，取完，流被关闭了。
 	isJson := strings.Index(ctx.Request.Header.Get("content-type"), "application/json") >= 0
 	if isJson {
-		// 直接转为bean
 		// P1 修复：原实现 `_ =` 吞掉绑定错误——非法 JSON 会静默变成零值 bean，
 		// 与 form 路径（明确报错）行为不一致，必填项靠 validator 兜底、非必填项静默丢失
 		if err := ctx.Proxy.ShouldBindJSON(bean); err != nil {
@@ -265,7 +263,6 @@ func (ctx *Context) bindStruct(bean any) {
 		}
 		// B5: 跨 PostForm/Query/Param 统一判断 key 是否存在
 		val, keyExist := ctx.bindValue(key)
-		// 判断trim
 		if tag.Trim.Hit(field.Tag) {
 			val = strings.TrimSpace(val)
 		}

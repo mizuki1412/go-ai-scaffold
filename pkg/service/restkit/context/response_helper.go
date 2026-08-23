@@ -111,7 +111,6 @@ func (ctx *Context) FileDirect(obsolutePath, name string) {
 	ctx.Proxy.File(obsolutePath + name)
 }
 
-// SendSSE 发送sse消息
 func (ctx *Context) SendSSE(msg string) {
 	ctx.Proxy.Header("Content-Type", "text/event-stream")
 	ctx.Proxy.Header("Cache-Control", "no-cache")

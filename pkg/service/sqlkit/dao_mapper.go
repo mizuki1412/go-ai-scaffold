@@ -304,7 +304,6 @@ func (dao Dao[T]) SelectByIds(ids []int64) []*T {
 	return dao.Select().WhereUnnestIn(dao.modelMeta.allPKs[0].OriKey, ids).List()
 }
 
-// CheckSchemaExist schema是否存在
 func (dao Dao[T]) CheckSchemaExist(schema string) bool {
 	p1 := rawPlaceholder(dao.dataSource.Driver, 1)
 	var sql string
@@ -332,7 +331,6 @@ func (dao Dao[T]) CheckSchemaExist(schema string) bool {
 	return false
 }
 
-// CheckTableExist 检查表是否存在
 func (dao Dao[T]) CheckTableExist(t string) bool {
 	if dao.dataSource.Driver == sqlconst.Sqlite3 {
 		rows := dao.QueryRaw(

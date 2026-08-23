@@ -17,8 +17,6 @@ import (
 	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
 )
 
-// ============ Login ============
-
 // Login 合并 loginByUsername 和 login，返回用户。
 // 调用方负责创建 JWT、设置 cookie、调用 AdditionLoginFunc 等 HTTP 层逻辑。
 // P1 修复（MD5→bcrypt 迁移）：改为取回用户后在 Go 侧校验密码——
@@ -50,17 +48,11 @@ func Login(username, phone, pwd string) *model.User {
 	return user
 }
 
-// ============ User Info ============
-
-// GetUserById 根据 uid 获取用户。
 func GetUserById(uid int64) *model.User {
 	dao := userdao.New(userdao.OptsDefault)
 	return dao.SelectOneById(uid)
 }
 
-// ============ UpdatePwd ============
-
-// UpdatePwd 修改密码。
 func UpdatePwd(uid int64, oldPwd, newPwd string) {
 	dao := userdao.New(userdao.OptsDefault)
 	user := dao.SelectOneById(uid)
@@ -73,8 +65,6 @@ func UpdatePwd(uid int64, oldPwd, newPwd string) {
 	user.Pwd.Set(cryptokit.HashPwd(newPwd))
 	dao.UpdateObj(user)
 }
-
-// ============ UpdateUserInfo ============
 
 type UpdateUserInfoParams struct {
 	Username   class.String
@@ -143,8 +133,6 @@ func UpdateUserInfo(uid int64, params UpdateUserInfoParams) {
 	dao.UpdateObj(u)
 }
 
-// ============ ListUsers ============
-
 type ListUsersParams struct {
 	DepartmentIds []int64
 	RoleIds       []int64
@@ -155,8 +143,6 @@ func ListUsers(params ListUsersParams) []*model.User {
 	dao := userdao.New(userdao.OptsDefault)
 	return dao.List(userdao.ListParam{Roles: params.RoleIds, Departments: params.DepartmentIds})
 }
-
-// ============ AddUser ============
 
 type AddUserParams struct {
 	Username   class.String `validate:"required"`
@@ -234,8 +220,6 @@ func AddUser(params AddUserParams, checkSms bool) *model.User {
 	return u
 }
 
-// ============ UpdateUser ============
-
 type UpdateUserParams struct {
 	Id         int64 `validate:"required"`
 	Username   class.String
@@ -312,8 +296,6 @@ func UpdateUser(params UpdateUserParams) {
 	}
 	dao.UpdateObj(u)
 }
-
-// ============ DeleteUser ============
 
 type DeleteUserParams struct {
 	Id  int64       `validate:"required"`

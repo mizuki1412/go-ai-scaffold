@@ -9,14 +9,12 @@ import (
 )
 
 func Zip(dst, src string) (err error) {
-	// 创建准备写入的文件
 	fw, err := os.Create(dst)
 	defer fw.Close()
 	if err != nil {
 		return err
 	}
 
-	// 通过 fw 来创建 zip.Write
 	zw := zip.NewWriter(fw)
 	defer zw.Close()
 
@@ -29,13 +27,11 @@ func Zip(dst, src string) (err error) {
 			return errBack
 		}
 
-		// 通过文件信息，创建 zip 的文件信息
 		fh, err := zip.FileInfoHeader(fi)
 		if err != nil {
 			return err
 		}
 
-		// 替换文件信息中的文件名
 		fh.Name = strings.TrimPrefix(path, delPrefix)
 
 		// 这步开始没有加，会发现解压的时候说它不是个目录
@@ -43,7 +39,6 @@ func Zip(dst, src string) (err error) {
 			fh.Name += "/"
 		}
 
-		// 写入文件信息，并返回一个 Write 结构
 		w, err := zw.CreateHeader(fh)
 		if err != nil {
 			return err
@@ -55,14 +50,12 @@ func Zip(dst, src string) (err error) {
 			return nil
 		}
 
-		// 打开要压缩到的文件
 		fr, err := os.Open(path)
 		defer fr.Close()
 		if err != nil {
 			return err
 		}
 
-		// 将打开的文件 Copy 到 w
 		_, err = io.Copy(w, fr)
 		if err != nil {
 			return err

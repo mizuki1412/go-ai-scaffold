@@ -66,7 +66,6 @@ func (dao SelectDao[T]) OneMap() map[string]any {
 	return nil
 }
 
-// OneString 取一个string值
 func (dao SelectDao[T]) OneString() string {
 	d := dao
 	if !dao.ignoreLogicDel {
@@ -88,7 +87,6 @@ func (dao SelectDao[T]) OneString() string {
 	return ""
 }
 
-// OneNumber 取一个number值
 func (dao SelectDao[T]) OneNumber() int64 {
 	d := dao
 	if !dao.ignoreLogicDel {
@@ -110,7 +108,6 @@ func (dao SelectDao[T]) OneNumber() int64 {
 	return 0
 }
 
-// Count 计数值
 func (dao SelectDao[T]) Count() int64 {
 	d := dao.resetColumns("count(1)")
 	return d.OneNumber()
@@ -175,7 +172,6 @@ func (dao SelectDao[T]) Page(p Page) ([]*T, uint64) {
 	if !dao.ignoreLogicDel {
 		d = dao.whereNLogicDel()
 	}
-	// 分页数据
 	d1 := d.Limit(p.PageSize).Offset(p.PageSize * (p.PageNum - 1))
 	// 总数：内层只取常量列 1，避免回传全部字段
 	d2 := d.resetColumns("1").Prefix("select count(1) from (").Suffix(") t")

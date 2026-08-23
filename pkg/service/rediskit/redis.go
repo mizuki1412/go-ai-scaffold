@@ -21,7 +21,7 @@ func Instance() *redis.Client {
 		once.Do(func() {
 			client = redis.NewClient(&redis.Options{
 				Addr:     configkit.GetString(configkey.RedisHost) + ":" + configkit.GetString(configkey.RedisPort, "6379"),
-				Password: configkit.GetString(configkey.RedisPwd), // no password set
+				Password: configkit.GetString(configkey.RedisPwd),
 				DB:       cast.ToInt(configkit.GetString(configkey.RedisDB, "0")),
 			})
 		})
@@ -29,7 +29,6 @@ func Instance() *redis.Client {
 	return client
 }
 
-// HasConfig 是否设置了redis
 func HasConfig() bool {
 	return configkit.Exist(configkey.RedisHost)
 }

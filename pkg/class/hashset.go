@@ -6,12 +6,9 @@ import (
 )
 
 type HashSet struct {
-	//数据载体
-	data map[any]any
-	//数据类型
+	data     map[any]any
 	dataType string
-	//数据数量
-	count int
+	count    int
 }
 
 // NewHashSet 初始化并指定存储对象的类型
@@ -22,17 +19,14 @@ func NewHashSet(data any) *HashSet {
 	return hashSet
 }
 
-// Size 返回数据数量
 func (hashSet *HashSet) Size() int {
 	return hashSet.count
 }
 
-// GetDataType 返回数据类型
 func (hashSet *HashSet) GetDataType() any {
 	return hashSet.dataType
 }
 
-// Add 添加元素
 func (hashSet *HashSet) Add(key any) error {
 	err := hashSet.checkData(key)
 	if err != nil {
@@ -47,7 +41,6 @@ func (hashSet *HashSet) Add(key any) error {
 	return nil
 }
 
-// Remove 删除指定Key元素
 func (hashSet *HashSet) Remove(key any) error {
 	err := hashSet.checkData(key)
 	if err != nil {
@@ -63,7 +56,6 @@ func (hashSet *HashSet) Remove(key any) error {
 	return errors.New("NotFoundKey")
 }
 
-// Contains 判断key是否存在
 func (hashSet *HashSet) Contains(key any) (bool, error) {
 	err := hashSet.checkData(key)
 	if err != nil {
@@ -77,7 +69,6 @@ func (hashSet *HashSet) Contains(key any) (bool, error) {
 	}
 }
 
-// Clear 重置
 func (hashSet *HashSet) Clear() {
 	hashSet.count = 0
 	hashSet.data = make(map[any]any)

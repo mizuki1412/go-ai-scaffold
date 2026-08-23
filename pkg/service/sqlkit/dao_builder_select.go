@@ -67,8 +67,6 @@ func (dao SelectDao[T]) IgnoreLogicDel() SelectDao[T] {
 	return dao
 }
 
-// SQL methods
-
 // Prefix 在 sql 前写入语句
 func (dao SelectDao[T]) Prefix(sql string, args ...any) SelectDao[T] {
 	dao.builder = dao.builder.Prefix(sql, args...)
@@ -224,8 +222,6 @@ func (dao SelectDao[T]) Offset(offset uint64) SelectDao[T] {
 	dao.builder = dao.builder.Offset(offset)
 	return dao
 }
-
-// custom
 
 // 重置select选项
 func (dao SelectDao[T]) resetColumns(fields ...string) SelectDao[T] {

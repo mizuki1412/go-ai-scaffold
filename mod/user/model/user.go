@@ -44,7 +44,6 @@ func (th *User) BelongDepartment(department int64) bool {
 	return th != nil && th.Department != nil && th.Department.Id == department
 }
 
-// HasPrivilege 判断是否有权限
 func (th *User) HasPrivilege(privilege string) bool {
 	return th != nil && th.Role != nil && th.Role.Privileges.Contains(privilege)
 }

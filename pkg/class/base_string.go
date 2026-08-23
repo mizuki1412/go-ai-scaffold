@@ -15,7 +15,6 @@ type String struct {
 }
 
 func (th String) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	// todo ?
 	if th.Valid {
 		return e.EncodeElement(th.String, start)
 	}
@@ -23,7 +22,6 @@ func (th String) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 func (th *String) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var value string
-	// Read tag content into value
 	err := d.DecodeElement(&value, &start)
 	if err != nil {
 		return err
@@ -53,7 +51,6 @@ func (th String) MarshalJSON() ([]byte, error) {
 	}
 	// 返回json中的null
 	return []byte("null"), nil
-	//return nil,nil
 }
 func (th *String) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {

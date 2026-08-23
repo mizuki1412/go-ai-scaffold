@@ -22,7 +22,6 @@ type DataSource struct {
 	TX *sqlx.Tx
 	// 指定数据源（原始数据源连接池）
 	DBPool *sqlx.DB
-	// 连接时的driver
 	Driver string
 	// 事务嵌套深度，支持 TxArea 嵌套复用同一事务
 	txDepth int
@@ -119,7 +118,7 @@ func getDB(param DataSourceParam) *sqlx.DB {
 		db.Exec("PRAGMA journal_mode=WAL")
 		db.Exec("PRAGMA busy_timeout=5000")  // 避免锁冲突直接报错
 		db.Exec("PRAGMA synchronous=NORMAL") // WAL 下 NORMAL 已足够安全，进一步提升写入性能
-		//db.SetMaxOpenConns(1) // SQLite 单写锁，多连接无益反而有害
+		// WAL 已缓解写锁争用；如遇 database is locked 可再限 SetMaxOpenConns(1)
 	} else {
 		db = sqlx.MustConnect(getDataSourceName(param))
 		if param.MaxLife > 0 {

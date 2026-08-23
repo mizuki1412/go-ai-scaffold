@@ -56,9 +56,8 @@ func NewClient(param ConnectParam) *Client {
 	var lostHan MQTT.OnConnectHandler = func(c MQTT.Client) {
 		allClientsMux.RLock()
 		defer allClientsMux.RUnlock()
-		// 连接成功后才会
+		// 该回调连接成功后才会触发；重连后重新订阅
 		if cl, ok := allClients[c]; ok {
-			// 重连后重新订阅
 			logkit.Info(fmt.Sprintf("mqtt reconnect: %s, subs:%s", cl.Id, cast.ToString(len(cl.SubscribeList))))
 			for _, sub := range cl.SubscribeList {
 				sub()

@@ -12,14 +12,10 @@ import (
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 )
 
-// ============ ListAllPrivileges ============
-
 func ListAllPrivileges() []*model.PrivilegeConstant {
 	dao := privilegedao.New(privilegedao.OptsNone)
 	return dao.ListPrivileges()
 }
-
-// ============ CreateRole ============
 
 type CreateRoleParams struct {
 	Name           string          `validate:"required"`
@@ -45,8 +41,6 @@ func CreateRole(params CreateRoleParams) {
 	rdao := roledao.New(roledao.OptsDefault)
 	rdao.InsertObj(role)
 }
-
-// ============ UpdateRole ============
 
 type UpdateRoleParams struct {
 	Id             int64 `validate:"required"`
@@ -82,8 +76,6 @@ func UpdateRole(params UpdateRoleParams) {
 	dao.UpdateObj(role)
 }
 
-// ============ DeleteRole ============
-
 type DeleteRoleParams struct {
 	Id int64 `validate:"required"`
 }
@@ -108,8 +100,6 @@ func DeleteRole(id int64) {
 	dao.DeleteById(role.Id)
 }
 
-// ============ ListRoles ============
-
 type ListRolesParam struct {
 	Root class.Int64 `comment:"指定根department"`
 }
@@ -128,8 +118,6 @@ func ListRoles(params ListRolesParam) []*model.Role {
 	}
 	return roles
 }
-
-// ============ ListRolesWithUser ============
 
 type ListRolesWithUserParams struct {
 	RoleId int64 `validate:"required"`

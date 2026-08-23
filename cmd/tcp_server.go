@@ -18,19 +18,11 @@ func TCPServerCMD() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			server := &netkit.NetServer{
 				Port: cast.ToInt32(configkit.GetString("port")),
-				//OnConnect: func(c gnet.Conn) (out []byte, action gnet.Action) {
-				//	log.Println("OnConnect： ", c.RemoteAddr())
-				//	return
-				//},
 				TrafficHandler: func(c gnet.Conn) {
 					buf, _ := c.Next(-1)
 					log.Println("recv：" + bytekit.Bytes2HexArray(buf))
 					return
 				},
-				//OnClose: func(c gnet.Conn, err error) (action gnet.Action) {
-				//	log.Println("OnClose： ", c.RemoteAddr())
-				//	return
-				//},
 			}
 			server.Run()
 		},

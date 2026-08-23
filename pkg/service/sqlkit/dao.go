@@ -21,10 +21,8 @@ type Dao[T any] struct {
 	Cascade func(*T)
 	// 批量级联实现的函数。优先于 Cascade 使用，避免 N+1 查询
 	CascadeBatch func([]*T)
-	// 数据源
-	dataSource *DataSource
-	// 目标表结构
-	modelMeta ModelMeta
+	dataSource   *DataSource
+	modelMeta    ModelMeta
 }
 
 type DaoModelMeta interface {

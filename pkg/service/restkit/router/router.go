@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin/render"
 )
 
-// Router router的抽象
 type Router struct {
 	Proxy      *gin.Engine
 	ProxyGroup *gin.RouterGroup
@@ -153,7 +152,6 @@ func (router *Router) Api(options ...func(opt *openapi.Builder)) *Router {
 // B9: 无扩展名时默认 text/html，避免浏览器误判 MIME。
 func EmbedHtmlHandle(fs embed.FS, root string) func(c *context.Context) {
 	return func(c *context.Context) {
-		// 解析访问路径
 		var assetPath string
 		pathName := c.Proxy.Param("action")
 		if root == "./knife-ui" {

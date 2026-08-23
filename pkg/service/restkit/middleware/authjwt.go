@@ -24,7 +24,6 @@ func AuthJWTScope(scopes ...string) router.Handler {
 	return func(ctx *context.Context) {
 		jwt := ctx.GetJwt()
 		token := ctx.GetJwtToken()
-		// 获取 jwt
 		if !jwt.IsValid() || jwt.ExpiresAt.Before(time.Now()) || (token != "" && cachekit.Get("token:"+token) == "") {
 			ctx.Json(context.RestRet{
 				Result:  context.ResultAuthErr,

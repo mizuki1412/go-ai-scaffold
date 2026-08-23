@@ -207,21 +207,16 @@ func buildFieldSchemas(rt reflect.Type, callBack func(s *ApiDocV3Schema, field r
 		}
 		schema := buildSchemaByType(field.Type)
 		schema.Description = field.Tag.Get(tag.Comment.Name)
-		// default tag
 		if v, ok := field.Tag.Lookup(tag.Default.Name); ok {
 			schema.Default = v
 		}
-		// 从 validate tag 提取约束
 		applyValidateConstraints(schema, field.Tag.Get(tag.Validate.Name))
-		// example tag
 		if v, ok := field.Tag.Lookup(tag.Example.Name); ok {
 			schema.Example = v
 		}
-		// deprecated tag
 		if tag.Deprecated.Hit(field.Tag) {
 			schema.Deprecated = true
 		}
-		// readOnly / writeOnly
 		if tag.ReadOnly.Hit(field.Tag) {
 			schema.ReadOnly = true
 		}

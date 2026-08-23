@@ -19,10 +19,6 @@ func Cors() router.Handler {
 			c.Proxy.Status(http.StatusNoContent)
 			c.Proxy.Abort()
 		}
-		//c.Proxy.SetCookie(&http.Cookie{
-		//	Name:     "Set-Cookie",
-		//	SameSite: http.SameSiteNoneMode,
-		//})
 		c.Proxy.Next()
 	}
 }

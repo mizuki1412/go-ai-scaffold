@@ -18,7 +18,6 @@ func IsNull(obj any) bool {
 }
 
 func Concat(strs ...string) string {
-	// 内部用的Builder
 	return strings.Join(strs, "")
 }
 
@@ -65,7 +64,6 @@ func CamelCase(str string) string {
 	return temp
 }
 
-// UpperFirst 首字母大写
 func UpperFirst(str string) string {
 	if str == "" {
 		return str
@@ -77,7 +75,6 @@ func UpperFirst(str string) string {
 	return string(bytes)
 }
 
-// LowerFirst 首字母小写
 func LowerFirst(str string) string {
 	if str == "" {
 		return str

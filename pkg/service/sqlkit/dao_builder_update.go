@@ -45,8 +45,6 @@ func (dao UpdateDao[T]) ToSql() (string, []any, error) {
 	return sqls, argsWrap(dao.dataSource.Driver, args), err
 }
 
-// SQL methods
-
 // Prefix 在 sql 前写入语句
 func (dao UpdateDao[T]) Prefix(sql string, args ...interface{}) UpdateDao[T] {
 	dao.builder = dao.builder.Prefix(sql, args...)

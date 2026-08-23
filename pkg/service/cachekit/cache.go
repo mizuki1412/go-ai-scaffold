@@ -60,7 +60,6 @@ func Set(key string, value string, ps ...*Param) {
 			rediskit.Set(context.Background(), rediskit.GetKeyWithPrefix(key), value, p.Ttl)
 		})
 	}
-	// 同时也存入cache
 	var res bool
 	if p.Ttl > 0 {
 		res = _cache.SetWithTTL(key, value, p.Cost, p.Ttl)

@@ -15,8 +15,7 @@ import (
 type ChatModelConfig struct {
 	APIKey  string `json:"api_key"`
 	BaseURL string `json:"base_url"`
-	// 模型名称
-	Model string `json:"model"`
+	Model   string `json:"model"`
 
 	MaxTokens int `json:"max_tokens,omitempty"`
 	Timeout   int `json:"timeout"` // seconds

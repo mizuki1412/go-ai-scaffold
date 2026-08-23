@@ -43,7 +43,7 @@ func NeedUpgrade(stored string) bool {
 
 // URLEncode 这里是base64的，中文url用url.QueryEscape
 func URLEncode(s string) string {
-	//println(base64.RawStdEncoding.EncodeToString([]byte(s))) 会去掉==
+	// 不用 RawURLEncoding：其会去掉 == 填充
 	return base64.URLEncoding.EncodeToString([]byte(s))
 }
 
@@ -60,7 +60,5 @@ func HmacSha256(message []byte, secret string) string {
 	key := []byte(secret)
 	h := hmac.New(sha256.New, key)
 	h.Write(message)
-	//sha := hex.EncodeToString()
-	//	hex.EncodeToString(h.Sum(nil))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

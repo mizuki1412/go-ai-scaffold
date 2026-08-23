@@ -59,7 +59,6 @@ func Export(param Param, ctx *context.Context) {
 		}
 		keyMap[ts[0]] = m
 	}
-	// style title
 	titleStyle, err := f.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
@@ -74,7 +73,6 @@ func Export(param Param, ctx *context.Context) {
 	}
 	cellStyle, err := f.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{
-			//Horizontal: "right",
 			Vertical: "center",
 			WrapText: true,
 		},
@@ -86,29 +84,20 @@ func Export(param Param, ctx *context.Context) {
 	if err != nil {
 		panic(exception.New(err.Error()))
 	}
-	// title
-	//err = f.MergeCell(param.Sheet, "A1", string(rune('A'+len(param.Keys)-1))+"1")
-	//err = f.SetCellStyle(param.Sheet, "A1", string(rune('A'+len(param.Keys)-1))+"1", titleStyle)
 	err = f.MergeCell(param.Sheet, "A1", baseConversion(len(param.Keys)-1)+"1")
 	err = f.SetCellStyle(param.Sheet, "A1", baseConversion(len(param.Keys)-1)+"1", titleStyle)
 	err = f.SetCellValue(param.Sheet, "A1", param.Title)
-	// key title
 	for _, v := range keyMap {
-		//cell := string(rune('A'+v.Index)) + "2"
 		cell := baseConversion(v.Index) + "2"
 		err = f.SetCellStyle(param.Sheet, cell, cell, cellStyle)
 		err = f.SetCellValue(param.Sheet, cell, v.Name)
 		if v.Width > 0 {
-			//err = f.SetColWidth(param.Sheet, string(rune('A'+v.Index)), string(rune('A'+v.Index)), v.Width)
 			err = f.SetColWidth(param.Sheet, baseConversion(v.Index), baseConversion(v.Index), v.Width)
 		}
 	}
-	// data
 	for i, data := range param.Data {
 		index := i + 3
-		// 每个cell加style
 		for j := range param.Keys {
-			//cell := string(rune('A'+j)) + cast.ToString(index)
 			cell := baseConversion(j) + cast.ToString(index)
 			err = f.SetCellStyle(param.Sheet, cell, cell, cellStyle)
 		}
@@ -116,12 +105,10 @@ func Export(param Param, ctx *context.Context) {
 			if _, ok := keyMap[k]; !ok {
 				continue
 			}
-			//cell := string(rune('A'+keyMap[k].Index)) + cast.ToString(index)
 			cell := baseConversion(keyMap[k].Index) + cast.ToString(index)
 			err = f.SetCellValue(param.Sheet, cell, v)
 		}
 	}
-	// 发送至web stream
 	if param.FileName == "" {
 		param.FileName = "export.xlsx"
 	}
@@ -177,7 +164,6 @@ func Load(param Param) []map[string]string {
 			names, _ = rows.Columns()
 		} else if index > 2 {
 			m := map[string]string{}
-			// excelize.Options{RawCellValue: true}
 			values, _ := rows.Columns()
 			for i, v := range values {
 				if names != nil && len(names) > i && nameMap[names[i]] != "" {

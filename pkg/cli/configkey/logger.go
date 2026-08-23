@@ -1,8 +1,8 @@
 package configkey
 
-// LogPath 日志目录: 不设置则不写入文件
 const LogConsole = "logger.console"
 
+// LogPath 日志目录: 不设置则不写入文件
 const LogPath = "logger.path"
 
 // LogName 文件名，无后缀

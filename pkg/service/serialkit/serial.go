@@ -37,7 +37,6 @@ func ListPorts() []string {
 }
 
 func Open(config0 Config) {
-	//config = config0
 	if connect == nil {
 		var err error
 		connect, err = serial.Open(
@@ -92,7 +91,6 @@ func Receive(handle func([]byte, []byte) ([]byte, bool), timeoutMill int) chan [
 				break
 			}
 			if n == 0 {
-				// timeout
 				// P1 修复：timeoutMill<=0 表示不处理超时（对齐注释语义）。
 				// 原实现 `After(now+0)` 恒为真，0 会变成「首次空读立即超时」，语义相反
 				if timeoutMill > 0 && time.Now().After(now.Add(time.Duration(timeoutMill)*time.Millisecond)) {

@@ -11,8 +11,6 @@ import (
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 )
 
-// ============ CreateDepartment ============
-
 type CreateDepartmentParams struct {
 	No          class.String `validate:"required"`
 	Name        string       `validate:"required"`
@@ -45,8 +43,6 @@ func CreateDepartment(params CreateDepartmentParams) {
 	department.Extend.Set(params.Extend)
 	dao.InsertObj(department)
 }
-
-// ============ UpdateDepartment ============
 
 type UpdateDepartmentParams struct {
 	Id          int64 `validate:"required"`
@@ -93,8 +89,6 @@ func UpdateDepartment(params UpdateDepartmentParams) {
 	dao.UpdateObj(department)
 }
 
-// ============ DeleteDepartment ============
-
 type DeleteDepartmentParams struct {
 	Id int64 `validate:"required"`
 }
@@ -109,13 +103,11 @@ func DeleteDepartment(id int64) {
 	if department.Extend.GetBool("immutable") { // B13
 		panic(exception.New("该部门不可删除"))
 	}
-	// 判断是否有角色
 	roleDao := roledao.New(roledao.OptsNone)
 	rNum := roleDao.CountFromRootDepart(department.Id)
 	if rNum > 0 {
 		panic(exception.New("部门下还有角色,不能删除"))
 	}
-	// 判断是否有用户
 	userDao := userdao.New(userdao.OptsNone)
 	uNum := userDao.CountFromRootDepart(department.Id)
 	if uNum > 0 {
@@ -123,8 +115,6 @@ func DeleteDepartment(id int64) {
 	}
 	dao.DeleteById(department.Id)
 }
-
-// ============ ListDepartments ============
 
 // ListDepartments B16: 用 OptsNone 一次查出全部部门，在内存中构建树，
 // 替代 OptsAll 的 N+1 递归查询。

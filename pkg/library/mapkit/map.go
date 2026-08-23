@@ -20,7 +20,6 @@ func PutAll(target, origin map[string]any) {
 // obj need pointer
 func Map2Struct(input map[string]any, obj any) error {
 	// todo 自定义的一些class出错
-	//return mapstructure.Decode(input, obj)
 	return jsonkit.ParseObj(jsonkit.ToString(input), obj)
 }
 

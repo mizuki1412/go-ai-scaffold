@@ -10,24 +10,15 @@ import (
 type TimeCost struct {
 	Title string
 	Start time.Time
-	//Unit string
 }
 
-type Params struct {
-	//Unit string // 时间显示单位 s,m
-}
+type Params struct{}
 
 func NewTimeCost(title string, params ...Params) TimeCost {
-	t := TimeCost{
+	return TimeCost{
 		Title: title,
 		Start: time.Now(),
 	}
-	//param := Params{}
-	//if len(params) > 0 {
-	//	param = params[0]
-	//}
-	//t.Unit = param.Unit
-	return t
 }
 
 // 每次打印后重新计时
