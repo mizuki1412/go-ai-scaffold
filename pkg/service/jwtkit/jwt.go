@@ -1,6 +1,8 @@
 package jwtkit
 
 import (
+	"errors"
+
 	"github.com/example/go-ai-scaffold/pkg/class"
 	"github.com/example/go-ai-scaffold/pkg/class/exception"
 	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
@@ -89,7 +91,19 @@ func (c Claims) IsValid() bool {
 	return true
 }
 
+// Parse 解析并校验 token，失败 panic（exception）——用于必须失败即终止的强校验链路。
 func Parse(token string) Claims {
+	c, err := ParseErr(token)
+	if err != nil {
+		panic(exception.New("jwt parse err: " + err.Error()))
+	}
+	return c
+}
+
+// ParseErr 解析并校验 token，失败返回 error 而非 panic。
+// 供 ReadToken 等可选登录链路使用：请求头携带非法/历史遗留 token 应视为未登录，
+// 而非走 panic+recover 记 ERROR 级日志（客户端传垃圾 token 是常态请求，ERROR 会淹没真实故障）。
+func ParseErr(token string) (Claims, error) {
 	t, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return secretKey(), nil
 	})
@@ -97,10 +111,10 @@ func Parse(token string) Claims {
 	// P2 修复：ParseWithClaims 出错时返回的 t 为 nil，原实现直接访问 t.Claims
 	// 会 nil deref 而非给出清晰报错；先判 err
 	if err != nil {
-		panic(exception.New("jwt parse err: " + err.Error()))
+		return Claims{}, err
 	}
 	if claims, ok := t.Claims.(*Claims); ok && t.Valid {
-		return *claims
+		return *claims, nil
 	}
-	panic(exception.New("jwt parse err: invalid token"))
+	return Claims{}, errors.New("invalid token")
 }

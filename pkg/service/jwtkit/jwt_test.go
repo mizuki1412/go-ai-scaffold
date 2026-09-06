@@ -48,3 +48,19 @@ func TestNewScope(t *testing.T) {
 		t.Errorf("scope = %q, want 空", got)
 	}
 }
+
+// TestParseErr 非法 token 返回 error 而非 panic（ReadToken 可选登录链路依赖此语义：
+// 客户端携带历史遗留随机串/垃圾 token 应视为未登录，不产生 ERROR 级异常日志）。
+func TestParseErr(t *testing.T) {
+	configkit.Set(configkey.JwtSecretKey, "test-secret")
+	configkit.Set(configkey.JwtExpire, 1)
+	for _, bad := range []string{"", "not-a-jwt", "a.b.c", "Bearer abc.def.ghi"} {
+		if _, err := ParseErr(bad); err == nil {
+			t.Errorf("ParseErr(%q) 应返回 error", bad)
+		}
+	}
+	parsed, err := ParseErr(New(9).Token())
+	if err != nil || parsed.IdInt() != 9 {
+		t.Errorf("ParseErr(合法token) = %v, %v; want id 9, nil", parsed, err)
+	}
+}
