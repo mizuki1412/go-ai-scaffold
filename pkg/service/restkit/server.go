@@ -140,6 +140,18 @@ func Run(listeners ...net.Listener) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, os.Interrupt, syscall.SIGTERM)
 	<-quit
+	return shutdown()
+}
+
+// Shutdown 主动关停（与 Run 的信号触发关闭等价：先执行业务清理，再关停 HTTP server）。
+func Shutdown() {
+	_ = shutdown()
+}
+
+func shutdown() error {
+	if server == nil {
+		return nil
+	}
 	logkit.Info("Shutting down server...")
 
 	ctxt, cancel := ctx.WithTimeout(ctx.Background(), 5*time.Second)
@@ -150,21 +162,6 @@ func Run(listeners ...net.Listener) error {
 		return err
 	}
 	return nil
-}
-
-// Shutdown 主动关停（与 Run 的信号触发关闭等价）。
-// P2 修复：原用 context.Background 无超时，连接不释放时 Shutdown 永久阻塞；
-// 与 Run 一致给 5s 优雅关闭窗口，超时后返回并由调用方决定后续（强杀或告警）。
-func Shutdown() {
-	if server == nil {
-		return
-	}
-	logkit.Info("Shutting down server...")
-	ctxt, cancel := ctx.WithTimeout(ctx.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctxt); err != nil {
-		logkit.Error(err.Error())
-	}
 }
 
 var CustomShutdownLogic = func(ctx ctx.Context) {}
