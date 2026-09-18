@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/class/const/sqlconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/timekit"
 	"github.com/spf13/cast"
 )
 

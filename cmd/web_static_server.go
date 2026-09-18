@@ -3,7 +3,7 @@ package cmd
 import (
 	"net/http"
 
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/configkit"
 	"github.com/spf13/cobra"
 )
 

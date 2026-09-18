@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/constraints"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/tag"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/constraints"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/tag"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cast"
 )

@@ -2,7 +2,7 @@ package model
 
 import (
 	"database/sql/driver"
-	"github.com/example/go-ai-scaffold/pkg/class"
+	"github.com/example/go-frame/pkg/class"
 	"github.com/spf13/cast"
 )
 

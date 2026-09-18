@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/const/sqlconst"
+	"github.com/example/go-frame/pkg/class/exception"
 )
 
 // 生成pg的array表达式

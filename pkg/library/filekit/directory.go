@@ -1,7 +1,7 @@
 package filekit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"io/fs"
 	"os"
 	"path/filepath"

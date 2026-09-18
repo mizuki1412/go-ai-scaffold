@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/restkit/router"
 )
 
 // 色板按 Windows conhost 默认 16 色调色板的对比度选取：亮背景配黑字、深背景配亮白字。

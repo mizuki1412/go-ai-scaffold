@@ -1,8 +1,8 @@
 package timekit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/service/configkit"
 	"time"
 )
 

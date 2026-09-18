@@ -2,11 +2,11 @@ package rediskit
 
 import (
 	"context"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cast"
 	"sync"

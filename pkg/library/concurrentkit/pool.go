@@ -6,7 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/example/go-ai-scaffold/pkg/library/c"
+	"github.com/example/go-frame/pkg/library/c"
 )
 
 // Pool goroutine 池（移植自 GoFrame grpool，MIT）：

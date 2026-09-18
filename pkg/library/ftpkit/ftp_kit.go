@@ -2,7 +2,7 @@ package ftpkit
 
 import (
 	"bytes"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 	"github.com/jlaffaye/ftp"
 	"io"
 	"os"

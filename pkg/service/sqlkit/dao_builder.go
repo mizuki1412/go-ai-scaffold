@@ -2,7 +2,7 @@ package sqlkit
 
 import (
 	"github.com/Masterminds/squirrel"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 )
 
 // 默认取modelmeta中的columns，并装饰引号；fields中不装饰，因为可能存在表达式

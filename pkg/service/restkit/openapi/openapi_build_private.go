@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/tag"
-	"github.com/example/go-ai-scaffold/pkg/library/arraykit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/tag"
+	"github.com/example/go-frame/pkg/library/arraykit"
 )
 
 var refPrefix = "#/components/schemas/"

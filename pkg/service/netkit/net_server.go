@@ -2,8 +2,8 @@ package netkit
 
 import (
 	"fmt"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"github.com/panjf2000/gnet/v2"
 	"github.com/spf13/cast"
 )

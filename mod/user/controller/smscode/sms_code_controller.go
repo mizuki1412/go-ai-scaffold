@@ -5,12 +5,12 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/regexkit"
-	"github.com/example/go-ai-scaffold/pkg/service/rediskit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/openapi"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/regexkit"
+	"github.com/example/go-frame/pkg/service/rediskit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/restkit/openapi"
+	"github.com/example/go-frame/pkg/service/restkit/router"
 )
 
 func Init(router *router.Router) {

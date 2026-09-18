@@ -2,8 +2,8 @@ package class
 
 import (
 	"database/sql"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/class/utils"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/utils"
 	"github.com/spf13/cast"
 )
 

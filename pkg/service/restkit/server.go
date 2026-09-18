@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/middleware"
-	router2 "github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/restkit/middleware"
+	router2 "github.com/example/go-frame/pkg/service/restkit/router"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 )

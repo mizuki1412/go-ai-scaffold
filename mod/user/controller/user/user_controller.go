@@ -1,12 +1,12 @@
 package user
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/mod/user/service"
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/service/jwtkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/mod/user/service"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/service/jwtkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 )
 
 type loginByUsernameParam struct {

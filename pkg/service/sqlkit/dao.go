@@ -3,10 +3,10 @@ package sqlkit
 import (
 	"database/sql"
 
-	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/const/sqlconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"github.com/jmoiron/sqlx"
 )
 

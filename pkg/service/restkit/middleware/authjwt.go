@@ -4,10 +4,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/service/cachekit"
-	"github.com/example/go-ai-scaffold/pkg/service/jwtkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/pkg/service/cachekit"
+	"github.com/example/go-frame/pkg/service/jwtkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/restkit/router"
 )
 
 // AuthJWT 登录态校验（不限定 token 域）：JWT 本体有效 + 白名单 key 在。

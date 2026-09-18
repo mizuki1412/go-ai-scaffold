@@ -2,7 +2,7 @@ package timecost
 
 import (
 	"fmt"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"time"
 )
 

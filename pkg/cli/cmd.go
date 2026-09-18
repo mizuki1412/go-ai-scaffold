@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"github.com/spf13/cobra"
 )
 

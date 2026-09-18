@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/const/sqlconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/service/logkit"
 	"github.com/spf13/cast"
 )
 

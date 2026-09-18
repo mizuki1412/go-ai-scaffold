@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/library/cryptokit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/library/cryptokit"
+	"github.com/example/go-frame/pkg/service/configkit"
 )
 
 var client *Client

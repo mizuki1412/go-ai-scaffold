@@ -2,10 +2,10 @@ package class
 
 import (
 	"database/sql/driver"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/class/utils"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/library/mapkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/utils"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/library/mapkit"
 	"github.com/spf13/cast"
 )
 

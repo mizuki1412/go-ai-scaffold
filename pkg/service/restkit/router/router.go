@@ -3,9 +3,9 @@ package router
 import (
 	"net/http"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/openapi"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/restkit/openapi"
 	"github.com/gin-gonic/gin"
 )
 

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/albenik/go-serial/v2"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/service/logkit"
 )
 
 type Config struct {

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/service/configkit"
 )
 
 // TestIdleTtl 空闲窗口读取与退化语义：jwt.idle<=0（未配置或显式禁用）时回退 jwt.expire（不滑动）。

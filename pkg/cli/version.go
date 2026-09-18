@@ -8,9 +8,9 @@ import (
 
 // 版本信息，构建时通过 -ldflags 注入，例如：
 //
-//	go build -ldflags "-X github.com/example/go-ai-scaffold/pkg/cli.buildVersion=v1.0.0 \
-//	  -X github.com/example/go-ai-scaffold/pkg/cli.buildCommit=$(git rev-parse --short HEAD) \
-//	  -X github.com/example/go-ai-scaffold/pkg/cli.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+//	go build -ldflags "-X github.com/example/go-frame/pkg/cli.buildVersion=v1.0.0 \
+//	  -X github.com/example/go-frame/pkg/cli.buildCommit=$(git rev-parse --short HEAD) \
+//	  -X github.com/example/go-frame/pkg/cli.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 var (
 	buildVersion = "dev"
 	buildCommit  = "unknown"

@@ -1,7 +1,7 @@
 package sqlkit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/library/c"
+	"github.com/example/go-frame/pkg/library/c"
 )
 
 // TxArea 事务物理代码块，不指定datasource时，用defaultDataSource

@@ -2,9 +2,9 @@ package sqlkit
 
 import (
 	"github.com/Masterminds/squirrel"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 )
 
 type InsertDao[T any] struct {

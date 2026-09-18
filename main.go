@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user"
-	"github.com/example/go-ai-scaffold/pkg/cli"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit"
+	"github.com/example/go-frame/mod/user"
+	"github.com/example/go-frame/pkg/cli"
+	"github.com/example/go-frame/pkg/service/restkit"
 	"github.com/spf13/cobra"
 )
 

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/class/const/httpconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/class/const/httpconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/jsonkit"
 )
 
 // DefaultTimeout P2 修复：Req.Timeout<=0 且 Req.Ctx 为 nil 时的兜底超时。

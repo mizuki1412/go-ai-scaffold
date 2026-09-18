@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/stringkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/stringkit"
 )
 
 func Bytes2HexArray(bytes []byte) string {

@@ -4,10 +4,10 @@ import (
 	"log"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/mqttkit"
+	"github.com/example/go-frame/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/mqttkit"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )

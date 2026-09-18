@@ -3,9 +3,9 @@ package cmd
 import (
 	"log"
 
-	"github.com/example/go-ai-scaffold/pkg/library/bytekit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
-	"github.com/example/go-ai-scaffold/pkg/service/netkit"
+	"github.com/example/go-frame/pkg/library/bytekit"
+	"github.com/example/go-frame/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/netkit"
 	"github.com/panjf2000/gnet/v2"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"

@@ -3,7 +3,7 @@ package tarkit
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 	"io"
 )
 

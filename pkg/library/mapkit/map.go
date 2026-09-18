@@ -1,7 +1,7 @@
 package mapkit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/library/jsonkit"
 )
 
 func PutIfAbsent(target map[string]any, key string, val any) {

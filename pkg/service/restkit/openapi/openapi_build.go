@@ -5,14 +5,14 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/class/const/httpconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/cli/tag"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/library/stringkit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/class/const/httpconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/cli/tag"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/library/stringkit"
+	"github.com/example/go-frame/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 )
 
 var Doc *ApiDocV3

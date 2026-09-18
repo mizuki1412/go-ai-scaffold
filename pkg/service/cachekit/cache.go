@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/c"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/rediskit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/c"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/rediskit"
 )
 
 var _cache *ristretto.Cache[string, string]

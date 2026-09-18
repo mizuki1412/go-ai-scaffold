@@ -3,10 +3,10 @@ package jwtkit
 import (
 	"errors"
 
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/service/configkit"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/spf13/cast"
 	"time"

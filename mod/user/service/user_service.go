@@ -5,16 +5,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/go-ai-scaffold/mod/user/dao/departmentdao"
-	"github.com/example/go-ai-scaffold/mod/user/dao/roledao"
-	"github.com/example/go-ai-scaffold/mod/user/dao/userdao"
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/cryptokit"
-	"github.com/example/go-ai-scaffold/pkg/library/stringkit"
-	"github.com/example/go-ai-scaffold/pkg/service/rediskit"
-	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
+	"github.com/example/go-frame/mod/user/dao/departmentdao"
+	"github.com/example/go-frame/mod/user/dao/roledao"
+	"github.com/example/go-frame/mod/user/dao/userdao"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/cryptokit"
+	"github.com/example/go-frame/pkg/library/stringkit"
+	"github.com/example/go-frame/pkg/service/rediskit"
+	"github.com/example/go-frame/pkg/service/sqlkit"
 )
 
 // Login 合并 loginByUsername 和 login，返回用户。

@@ -1,10 +1,10 @@
 package user
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/middleware"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/openapi"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/pkg/service/restkit/middleware"
+	"github.com/example/go-frame/pkg/service/restkit/openapi"
+	"github.com/example/go-frame/pkg/service/restkit/router"
 )
 
 func Init(router *router.Router) {

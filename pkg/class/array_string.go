@@ -4,11 +4,11 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/example/go-ai-scaffold/pkg/class/const/sqlconst"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/class/utils"
-	"github.com/example/go-ai-scaffold/pkg/library/arraykit"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/class/const/sqlconst"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/utils"
+	"github.com/example/go-frame/pkg/library/arraykit"
+	"github.com/example/go-frame/pkg/library/jsonkit"
 	"github.com/lib/pq"
 )
 

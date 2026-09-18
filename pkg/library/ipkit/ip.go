@@ -1,9 +1,9 @@
 package ipkit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/bytekit"
-	"github.com/example/go-ai-scaffold/pkg/library/regexkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/bytekit"
+	"github.com/example/go-frame/pkg/library/regexkit"
 	"github.com/spf13/cast"
 	"strings"
 )

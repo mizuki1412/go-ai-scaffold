@@ -3,9 +3,9 @@ package roledao
 import (
 	"fmt"
 
-	"github.com/example/go-ai-scaffold/mod/user/dao/departmentdao"
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/pkg/service/sqlkit"
+	"github.com/example/go-frame/mod/user/dao/departmentdao"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/pkg/service/sqlkit"
 )
 
 type Dao struct {

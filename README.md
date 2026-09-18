@@ -1,5 +1,5 @@
 
-# go-ai-scaffold
+# go-frame
 
 用于vibe coding的go工程脚手架。
 
@@ -8,9 +8,9 @@
 ```go.mod
 module xxx
 
-replace github.com/example/go-ai-scaffold => ./go-ai-scaffold
+replace github.com/example/go-frame => ./go-frame
 
 require (
-	github.com/example/go-ai-scaffold v1.0.0
+	github.com/example/go-frame v1.0.0
 )
 ```

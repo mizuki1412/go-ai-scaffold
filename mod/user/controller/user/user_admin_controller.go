@@ -1,10 +1,10 @@
 package user
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/mod/user/service"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/mod/user/service"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 )
 
 var AdditionUserExAdminFunc func(ctx *context.Context, u *model.User)

@@ -1,7 +1,7 @@
 package arraykit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/library/jsonkit"
 	"github.com/spf13/cast"
 )
 

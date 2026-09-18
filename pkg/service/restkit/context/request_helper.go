@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/service/jwtkit"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/jwtkit"
+	"github.com/example/go-frame/pkg/service/logkit"
 )
 
 var HeaderTokenKey = "Authorization"

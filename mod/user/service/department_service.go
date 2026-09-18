@@ -3,12 +3,12 @@ package service
 import (
 	"time"
 
-	"github.com/example/go-ai-scaffold/mod/user/dao/departmentdao"
-	"github.com/example/go-ai-scaffold/mod/user/dao/roledao"
-	"github.com/example/go-ai-scaffold/mod/user/dao/userdao"
-	"github.com/example/go-ai-scaffold/mod/user/model"
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/mod/user/dao/departmentdao"
+	"github.com/example/go-frame/mod/user/dao/roledao"
+	"github.com/example/go-frame/mod/user/dao/userdao"
+	"github.com/example/go-frame/mod/user/model"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/exception"
 )
 
 type CreateDepartmentParams struct {

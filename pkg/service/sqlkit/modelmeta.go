@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/constraints"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/tag"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/constraints"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/tag"
 )
 
 // ModelMeta 获取model中的tablename和db fields

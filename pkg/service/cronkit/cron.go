@@ -3,9 +3,9 @@ package cronkit
 import (
 	"sync"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/c"
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/c"
+	"github.com/example/go-frame/pkg/library/timekit"
 	"github.com/robfig/cron/v3"
 )
 

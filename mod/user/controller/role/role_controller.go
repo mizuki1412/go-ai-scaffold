@@ -1,8 +1,8 @@
 package role
 
 import (
-	"github.com/example/go-ai-scaffold/mod/user/service"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/mod/user/service"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 )
 
 func ListAllPrivileges(ctx *context.Context) {

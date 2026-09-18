@@ -3,8 +3,8 @@ package ssehelper
 import (
 	"sync"
 
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 )
 
 // 在线客户端注册表。

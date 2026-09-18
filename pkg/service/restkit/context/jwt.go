@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/go-ai-scaffold/pkg/service/cachekit"
-	"github.com/example/go-ai-scaffold/pkg/service/jwtkit"
+	"github.com/example/go-frame/pkg/service/cachekit"
+	"github.com/example/go-frame/pkg/service/jwtkit"
 	"github.com/spf13/cast"
 )
 

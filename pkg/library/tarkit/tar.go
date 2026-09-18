@@ -2,7 +2,7 @@ package tarkit
 
 import (
 	"archive/tar"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 	"io"
 	"os"
 	"path/filepath"

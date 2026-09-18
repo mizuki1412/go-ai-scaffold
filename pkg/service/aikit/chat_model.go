@@ -3,12 +3,12 @@ package aikit
 import (
 	"fmt"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/framekit"
-	"github.com/example/go-ai-scaffold/pkg/library/httpkit"
-	"github.com/example/go-ai-scaffold/pkg/library/jsonkit"
-	"github.com/example/go-ai-scaffold/pkg/service/aikit/schema"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/framekit"
+	"github.com/example/go-frame/pkg/library/httpkit"
+	"github.com/example/go-frame/pkg/library/jsonkit"
+	"github.com/example/go-frame/pkg/service/aikit/schema"
+	"github.com/example/go-frame/pkg/service/logkit"
 )
 
 // ChatModelConfig api连接配置信息

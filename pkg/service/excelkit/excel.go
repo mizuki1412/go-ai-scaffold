@@ -1,10 +1,10 @@
 package excelkit
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/class"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/library/stringkit"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/class"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/library/stringkit"
+	"github.com/example/go-frame/pkg/service/restkit/context"
 	"github.com/spf13/cast"
 	"github.com/xuri/excelize/v2"
 	"strings"

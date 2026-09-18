@@ -2,7 +2,7 @@ package class
 
 import (
 	"fmt"
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 	"io"
 	"mime/multipart"
 )

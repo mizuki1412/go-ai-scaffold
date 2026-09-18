@@ -8,11 +8,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
-	"github.com/example/go-ai-scaffold/pkg/library/stringkit"
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
-	"github.com/example/go-ai-scaffold/pkg/service/configkit"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/library/stringkit"
+	"github.com/example/go-frame/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/service/configkit"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

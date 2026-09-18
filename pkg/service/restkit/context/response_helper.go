@@ -2,8 +2,8 @@ package context
 
 import (
 	"fmt"
-	"github.com/example/go-ai-scaffold/pkg/service/logkit"
-	"github.com/example/go-ai-scaffold/pkg/service/storagekit"
+	"github.com/example/go-frame/pkg/service/logkit"
+	"github.com/example/go-frame/pkg/service/storagekit"
 	"github.com/gin-gonic/gin/render"
 	"net/http"
 	"net/url"

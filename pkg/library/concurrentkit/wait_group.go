@@ -3,7 +3,7 @@ package concurrentkit
 import (
 	"sync"
 
-	"github.com/example/go-ai-scaffold/pkg/library/c"
+	"github.com/example/go-frame/pkg/library/c"
 )
 
 type Group struct {

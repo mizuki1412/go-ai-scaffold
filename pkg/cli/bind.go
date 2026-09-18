@@ -3,8 +3,8 @@ package cli
 import (
 	"errors"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
-	"github.com/example/go-ai-scaffold/pkg/cli/configkey"
+	"github.com/example/go-frame/pkg/class/exception"
+	"github.com/example/go-frame/pkg/cli/configkey"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

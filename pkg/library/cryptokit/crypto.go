@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/example/go-ai-scaffold/pkg/class/exception"
+	"github.com/example/go-frame/pkg/class/exception"
 	"golang.org/x/crypto/bcrypt"
 )
 

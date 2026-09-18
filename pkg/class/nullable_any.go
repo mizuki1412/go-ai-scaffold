@@ -1,7 +1,7 @@
 package class
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/library/timekit"
+	"github.com/example/go-frame/pkg/library/timekit"
 )
 
 // Any 系列方法：nullable 包装类型取底层值供 map[string]any 组装（响应构建等场景）。

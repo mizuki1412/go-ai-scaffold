@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/context"
-	"github.com/example/go-ai-scaffold/pkg/service/restkit/router"
+	"github.com/example/go-frame/pkg/service/restkit/context"
+	"github.com/example/go-frame/pkg/service/restkit/router"
 	"net/http"
 )
 

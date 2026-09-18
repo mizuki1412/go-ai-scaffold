@@ -13,7 +13,7 @@ Go scaffold for vibe-coding REST services (gin + viper + cobra + sqlx/squirrel +
   go build ./... && go vet ./... && gofmt -l . && go test ./...
   ```
 - Tests cover pkg infra only (4 files: `pkg/class`, `pkg/library/cmdkit`, `pkg/library/cryptokit`, `pkg/library/framekit`); no `mod/` tests, no lint config, no CI.
-- Module path `github.com/example/go-ai-scaffold` and project name `go-ai-scaffold` are placeholders; rename (go.mod module path + import prefixes, at minimum) before reuse.
+- Module path `github.com/example/go-frame` and project name `go-frame` are placeholders; rename (go.mod module path + import prefixes, at minimum) before reuse.
 - Only one business module: `mod/user/`.
 
 ## Layout
