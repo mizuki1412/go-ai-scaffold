@@ -2,12 +2,17 @@ package cli
 
 import (
 	"errors"
+	"os"
+	"regexp"
 
 	"github.com/example/go-frame/pkg/class/exception"
 	"github.com/example/go-frame/pkg/cli/configkey"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+// envPlaceholderRe 配置值中的 ${ENV_NAME} 占位符（ENV_NAME 为合法环境变量名）
+var envPlaceholderRe = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
 
 // 这里将在 run 之后执行
 func loadConfig() {
@@ -21,6 +26,7 @@ func loadConfig() {
 	}
 	err := viper.ReadInConfig()
 	if err == nil {
+		expandEnvPlaceholders()
 		return
 	}
 	// P1 修复：原实现吞掉全部错误。搜索模式下「未找到配置文件」属正常（纯 flag/环境变量启动）；
@@ -31,6 +37,21 @@ func loadConfig() {
 		return
 	}
 	panic(exception.New("配置文件加载失败: " + err.Error()))
+}
+
+// expandEnvPlaceholders 将配置中形如 ${ENV_NAME} 的字符串值展开为环境变量值。
+// 环境变量未设置时展开为空串（调用方应自行校验敏感键）。
+func expandEnvPlaceholders() {
+	for _, key := range viper.AllKeys() {
+		raw, ok := viper.Get(key).(string)
+		if !ok || !envPlaceholderRe.MatchString(raw) {
+			continue
+		}
+		viper.Set(key, envPlaceholderRe.ReplaceAllStringFunc(raw, func(m string) string {
+			// m 形如 ${NAME}，去掉 ${ 与 } 取变量名
+			return os.Getenv(m[2 : len(m)-1])
+		}))
+	}
 }
 
 func bindDefaultFlags(cmd *cobra.Command) {

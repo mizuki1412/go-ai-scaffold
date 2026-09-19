@@ -39,6 +39,7 @@ main.go                       # cli.RootCMD(...) → restkit.AddActions(user.All
 - Every key is a `const` in `pkg/cli/configkey/*.go`, bound as cobra flag in `pkg/cli/bind.go`, read via `configkit.GetString/GetInt/GetBool(key, default...)` — never read viper directly.
 - Defaults: `:10000` for REST server; `/v3/api-docs` serves the OpenAPI JSON (no bundled UI).
 - Config file: `config.yaml` in working dir, override with `-c/--config`.
+- Env placeholders: after `ReadInConfig`, `loadConfig` expands `${ENV_NAME}` in string config values to `os.Getenv(ENV_NAME)`; unset vars expand to empty string (2026-09-19, VERSION 20260919).
 
 ## Conventions
 
